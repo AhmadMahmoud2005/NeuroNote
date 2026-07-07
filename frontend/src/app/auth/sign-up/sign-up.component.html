@@ -1,0 +1,126 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <!-- Logo -->
+    <div class="auth-logo">
+      <span class="logo-name">NeuroNote</span>
+      <p class="logo-tagline">Create your deep work workspace</p>
+    </div>
+
+    <!-- Form -->
+    <form class="auth-form" (ngSubmit)="onSubmit(registerForm)" #registerForm="ngForm" novalidate>
+
+      <!-- Full Name -->
+      <div class="form-group">
+        <label class="form-label" for="reg-name">FULL NAME</label>
+        <div class="input-wrapper"
+             [class.is-valid]="nameField.touched && nameField.valid"
+             [class.is-invalid]="nameField.touched && nameField.invalid">
+          <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <input
+            id="reg-name"
+            type="text"
+            class="form-input"
+            placeholder="Jane Doe"
+            [(ngModel)]="fullName"
+            name="fullName"
+            #nameField="ngModel"
+            required
+            minlength="3"
+          />
+        </div>
+        <div class="error-messages" *ngIf="nameField.touched && nameField.invalid">
+          <p class="error-msg" *ngIf="nameField.errors?.['required']">
+            Full name is required.
+          </p>
+          <p class="error-msg" *ngIf="nameField.errors?.['minlength']">
+            Name must be at least 3 characters.
+          </p>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label" for="reg-email">EMAIL ADDRESS</label>
+        <div class="input-wrapper"
+             [class.is-valid]="emailField.touched && emailField.valid"
+             [class.is-invalid]="emailField.touched && emailField.invalid">
+          <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          <input
+            id="reg-email"
+            type="email"
+            class="form-input"
+            placeholder="jane@example.com"
+            [(ngModel)]="email"
+            name="email"
+            #emailField="ngModel"
+            required
+            email
+          />
+        </div>
+        <div class="error-messages" *ngIf="emailField.touched && emailField.invalid">
+          <p class="error-msg" *ngIf="emailField.errors?.['required']">
+            Email is required.
+          </p>
+          <p class="error-msg" *ngIf="emailField.errors?.['email']">
+            Please enter a valid email address.
+          </p>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label class="form-label" for="reg-password">PASSWORD</label>
+        <div class="input-wrapper"
+             [class.is-valid]="passwordField.touched && passwordField.valid"
+             [class.is-invalid]="passwordField.touched && passwordField.invalid">
+          <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <input
+            id="reg-password"
+            type="password"
+            class="form-input"
+            placeholder="••••••••"
+            [(ngModel)]="password"
+            name="password"
+            #passwordField="ngModel"
+            required
+            minlength="8"
+          />
+        </div>
+        <div class="error-messages" *ngIf="passwordField.touched && passwordField.invalid">
+          <p class="error-msg" *ngIf="passwordField.errors?.['required']">
+            Password is required.
+          </p>
+          <p class="error-msg" *ngIf="passwordField.errors?.['minlength']">
+            Password must be at least 8 characters.
+          </p>
+        </div>
+        <p class="input-hint" *ngIf="passwordField.untouched || passwordField.valid">
+          Must be at least 8 characters.
+        </p>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn-submit" [class.btn-disabled]="registerForm.invalid">
+        Join the workspace
+      </button>
+
+      <!-- Switch to Login -->
+      <p class="auth-switch">
+        Already have an account?
+        <a routerLink="/login" class="auth-link">Log in here</a>
+      </p>
+    </form>
+  </div>
+</div>

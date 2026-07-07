@@ -26,8 +26,8 @@
       </nav>
       
       <div class="nav-actions">
-        <a href="#" class="login-btn" (click)="$event.preventDefault(); closeMenu()">Log in</a>
-        <a href="#" class="signup-btn" (click)="$event.preventDefault(); closeMenu()">Get Started</a>
+        <a routerLink="/login" class="login-btn" (click)="closeMenu()">Log in</a>
+        <a routerLink="/register" class="signup-btn" (click)="closeMenu()">Get Started</a>
       </div>
     </div>
   </div>

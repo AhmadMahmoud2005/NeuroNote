@@ -1,5 +1,5 @@
-<app-nav></app-nav>
+<app-nav *ngIf="!isAuthPage"></app-nav>
 <main class="main-content">
   <router-outlet></router-outlet>
 </main>
-<app-footer></app-footer>
+<app-footer *ngIf="!isAuthPage"></app-footer>
