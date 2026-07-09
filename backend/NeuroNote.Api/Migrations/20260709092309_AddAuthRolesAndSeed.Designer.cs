@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NeuroNote.Api.Data;
 
@@ -11,9 +12,11 @@ using NeuroNote.Api.Data;
 namespace NeuroNote.Api.Migrations
 {
     [DbContext(typeof(NeuroNoteDbContext))]
-    partial class NeuroNoteDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709092309_AddAuthRolesAndSeed")]
+    partial class AddAuthRolesAndSeed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

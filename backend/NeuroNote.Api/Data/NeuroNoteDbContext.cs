@@ -28,8 +28,22 @@ public class NeuroNoteDbContext(DbContextOptions<NeuroNoteDbContext> options) : 
             entity.Property(user => user.FullName).HasMaxLength(150).IsRequired();
             entity.Property(user => user.Email).HasMaxLength(200).IsRequired();
             entity.Property(user => user.PasswordHash).HasMaxLength(255).IsRequired();
+            entity.Property(user => user.Bio).HasMaxLength(1000).IsRequired();
+            entity.Property(user => user.AvatarUrl).HasColumnType("nvarchar(max)").IsRequired();
             entity.Property(user => user.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
             entity.Property(user => user.UpdatedAt);
+
+            entity.HasData(new User
+            {
+                Id = 1,
+                FullName = "Alex Rivera",
+                Email = "alex.rivera@example.com",
+                PasswordHash = "PLACEHOLDER_HASH",
+                Bio = "Focused on deep work and cognitive optimization.",
+                AvatarUrl = string.Empty,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = null
+            });
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -40,6 +54,11 @@ public class NeuroNoteDbContext(DbContextOptions<NeuroNoteDbContext> options) : 
             entity.Property(role => role.Name).HasMaxLength(100).IsRequired();
             entity.Property(role => role.Description).HasMaxLength(250);
             entity.Property(role => role.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+
+            entity.HasData(
+                new Role { Id = 1, Name = "Guest", Description = "Read-only access", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Role { Id = 2, Name = "Member", Description = "Workspace member access", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Role { Id = 3, Name = "Admin", Description = "Full administrative access", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) });
         });
 
         modelBuilder.Entity<UserRole>(entity =>
@@ -55,6 +74,13 @@ public class NeuroNoteDbContext(DbContextOptions<NeuroNoteDbContext> options) : 
                 .WithMany(role => role.UserRoles)
                 .HasForeignKey(userRole => userRole.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasData(new UserRole
+            {
+                UserId = 1,
+                RoleId = 3,
+                AssignedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            });
         });
 
         modelBuilder.Entity<Workspace>(entity =>
