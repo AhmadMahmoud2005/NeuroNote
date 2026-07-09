@@ -56,6 +56,17 @@ export class NewPageComponent implements OnInit, OnDestroy {
   showLeaveWarning = false;
   private leaveSubject = new Subject<boolean>();
 
+  // Share Modal States
+  showShareModal = false;
+  shareUsernameOrEmail = '';
+  sharePermission = 'Read';
+  sharedUsers: any[] = [];
+  shareSuccessMessage = '';
+  shareErrorMessage = '';
+  isSharing = false;
+  pageOwnerUsername = '';
+  isOwnerOfPage = true;
+
   // Available Colors
   readonly textColors = [
     { name: 'Default', value: '#0F172A' },
@@ -276,6 +287,68 @@ export class NewPageComponent implements OnInit, OnDestroy {
     this.leaveSubject = new Subject<boolean>();
   }
 
+  // Share Modal Operations
+  openShareModal(): void {
+    if (!this.pageId) return;
+    this.showShareModal = true;
+    this.shareSuccessMessage = '';
+    this.shareErrorMessage = '';
+    this.loadSharedUsers();
+  }
+
+  closeShareModal(): void {
+    this.showShareModal = false;
+    this.shareUsernameOrEmail = '';
+    this.shareSuccessMessage = '';
+    this.shareErrorMessage = '';
+  }
+
+  loadSharedUsers(): void {
+    if (!this.pageId) return;
+    this.pageService.getSharedUsers(this.pageId).subscribe({
+      next: (users) => {
+        this.sharedUsers = users;
+      },
+      error: (err) => {
+        console.error('Error loading shared users:', err);
+      }
+    });
+  }
+
+  sharePageWithUser(): void {
+    const input = this.shareUsernameOrEmail.trim();
+    if (!input || !this.pageId) return;
+
+    this.isSharing = true;
+    this.shareSuccessMessage = '';
+    this.shareErrorMessage = '';
+
+    this.pageService.sharePage(this.pageId, input, this.sharePermission).subscribe({
+      next: (res) => {
+        this.isSharing = false;
+        this.shareSuccessMessage = res.message || 'Page shared successfully!';
+        this.shareUsernameOrEmail = '';
+        this.loadSharedUsers();
+      },
+      error: (err) => {
+        this.isSharing = false;
+        this.shareErrorMessage = err.error?.message || 'Failed to share page. Make sure the user exists and is not already shared.';
+      }
+    });
+  }
+
+  revokeShare(sharedUserId: number): void {
+    if (!this.pageId) return;
+    this.pageService.revokePageShare(this.pageId, sharedUserId).subscribe({
+      next: () => {
+        this.loadSharedUsers();
+      },
+      error: (err) => {
+        console.error('Error revoking page share:', err);
+      }
+    });
+  }
+
   // Formatting Actions
   format(command: 'bold' | 'italic' | 'underline') {
     this.restoreSelection();
@@ -393,6 +466,10 @@ export class NewPageComponent implements OnInit, OnDestroy {
         this.contentHtml = this.jsonToHtml(page.content || '');
         this.lastSavedLabel = `Saved ${this.formatToCairoTime(page.updatedAt || page.createdAt)}`;
         this.isDirty = false;
+
+        const currentUserId = this.authService.currentUser?.userId || 0;
+        this.isOwnerOfPage = page.createdByUserId === currentUserId;
+        this.pageOwnerUsername = page.createdByUsername;
 
         if (this.editor) {
           this.editor.nativeElement.innerHTML = this.contentHtml;

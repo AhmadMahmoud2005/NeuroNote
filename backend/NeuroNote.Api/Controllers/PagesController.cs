@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NeuroNote.Api.Data;
 using NeuroNote.Api.DTOs.Pages;
+using NeuroNote.Api.DTOs.Workspaces;
 using NeuroNote.Api.Models;
 using System.Security.Claims;
 
@@ -23,6 +24,19 @@ public class PagesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetPages([FromQuery] int workspaceId)
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        // Enforce workspace membership auth
+        var hasAccess = await _context.WorkspaceMembers.AnyAsync(m => m.WorkspaceId == workspaceId && m.UserId == userId)
+            || await _context.Workspaces.AnyAsync(w => w.Id == workspaceId && w.OwnerUserId == userId);
+
+        if (!hasAccess)
+            return Forbid();
+
         var pages = await _context.Pages
             .Where(p => p.WorkspaceId == workspaceId && !p.IsArchived)
             .OrderBy(p => p.SortOrder)
@@ -33,6 +47,7 @@ public class PagesController : ControllerBase
                 WorkspaceId = p.WorkspaceId,
                 ParentPageId = p.ParentPageId,
                 CreatedByUserId = p.CreatedByUserId,
+                CreatedByUsername = p.CreatedByUser.Username,
                 Title = p.Title,
                 Slug = p.Slug,
                 Content = p.Content,
@@ -47,13 +62,132 @@ public class PagesController : ControllerBase
         return Ok(pages);
     }
 
+    [HttpGet("shared")]
+    public async Task<IActionResult> GetSharedPages()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        // Only return pages where status is Accepted
+        var pages = await _context.SharedPages
+            .Where(sp => sp.SharedWithUserId == userId && sp.Status == "Accepted")
+            .Include(sp => sp.Page)
+            .ThenInclude(p => p.CreatedByUser)
+            .Select(sp => new PageResponseDto
+            {
+                Id = sp.Page.Id,
+                WorkspaceId = sp.Page.WorkspaceId,
+                ParentPageId = sp.Page.ParentPageId,
+                CreatedByUserId = sp.Page.CreatedByUserId,
+                CreatedByUsername = sp.Page.CreatedByUser.Username,
+                Title = sp.Page.Title,
+                Slug = sp.Page.Slug,
+                Content = sp.Page.Content,
+                PlainText = sp.Page.PlainText,
+                IsArchived = sp.Page.IsArchived,
+                SortOrder = sp.Page.SortOrder,
+                CreatedAt = sp.Page.CreatedAt,
+                UpdatedAt = sp.Page.UpdatedAt
+            })
+            .ToListAsync();
+
+        return Ok(pages);
+    }
+
+    [HttpGet("invitations")]
+    public async Task<IActionResult> GetPageInvitations()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var invitations = await _context.SharedPages
+            .Where(sp => sp.SharedWithUserId == userId && sp.Status == "Pending")
+            .Include(sp => sp.Page)
+            .ThenInclude(p => p.CreatedByUser)
+            .Select(sp => new PageInvitationDto
+            {
+                Id = sp.Id,
+                PageId = sp.PageId,
+                PageTitle = sp.Page.Title,
+                SharedByUsername = sp.Page.CreatedByUser.Username,
+                Permission = sp.Permission,
+                SharedAt = sp.SharedAt
+            })
+            .ToListAsync();
+
+        return Ok(invitations);
+    }
+
+    [HttpPost("invitations/{invitationId}/respond")]
+    public async Task<IActionResult> RespondToPageInvitation(int invitationId, [FromBody] RespondInvitationDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var sharedPage = await _context.SharedPages.FindAsync(invitationId);
+        if (sharedPage == null)
+            return NotFound(new { message = "Invitation not found." });
+
+        if (sharedPage.SharedWithUserId != userId)
+            return Forbid();
+
+        if (sharedPage.Status != "Pending")
+            return BadRequest(new { message = "Invitation has already been processed." });
+
+        if (dto.Accept)
+        {
+            sharedPage.Status = "Accepted";
+            sharedPage.AcceptedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            sharedPage.Status = "Declined";
+            sharedPage.DeclinedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = dto.Accept ? "Page invitation accepted." : "Page invitation declined." });
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPage(int id)
     {
-        var page = await _context.Pages.FindAsync(id);
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var page = await _context.Pages
+            .Include(p => p.CreatedByUser)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         if (page == null)
             return NotFound(new { message = "Page not found." });
+
+        // Check view permissions (only accepted shares can view)
+        var isCreator = page.CreatedByUserId == userId;
+        var isWorkspaceMember = await _context.WorkspaceMembers.AnyAsync(m => m.WorkspaceId == page.WorkspaceId && m.UserId == userId)
+            || await _context.Workspaces.AnyAsync(w => w.Id == page.WorkspaceId && w.OwnerUserId == userId);
+        var isPageShared = await _context.SharedPages.AnyAsync(sp => sp.PageId == id && sp.SharedWithUserId == userId && sp.Status == "Accepted");
+
+        if (!isCreator && !isWorkspaceMember && !isPageShared)
+        {
+            return Forbid();
+        }
 
         return Ok(new PageResponseDto
         {
@@ -61,6 +195,7 @@ public class PagesController : ControllerBase
             WorkspaceId = page.WorkspaceId,
             ParentPageId = page.ParentPageId,
             CreatedByUserId = page.CreatedByUserId,
+            CreatedByUsername = page.CreatedByUser.Username,
             Title = page.Title,
             Slug = page.Slug,
             Content = page.Content,
@@ -84,6 +219,13 @@ public class PagesController : ControllerBase
 
         var userId = int.Parse(userIdClaim.Value);
 
+        // Enforce workspace member constraint on creation
+        var hasAccess = await _context.WorkspaceMembers.AnyAsync(m => m.WorkspaceId == dto.WorkspaceId && m.UserId == userId)
+            || await _context.Workspaces.AnyAsync(w => w.Id == dto.WorkspaceId && w.OwnerUserId == userId);
+
+        if (!hasAccess)
+            return Forbid();
+
         var slug = await GenerateUniqueSlugAsync(dto.WorkspaceId, dto.Title);
 
         var page = new Page
@@ -103,20 +245,25 @@ public class PagesController : ControllerBase
         _context.Pages.Add(page);
         await _context.SaveChangesAsync();
 
+        var createdPage = await _context.Pages
+            .Include(p => p.CreatedByUser)
+            .FirstAsync(p => p.Id == page.Id);
+
         return CreatedAtAction(nameof(GetPage), new { id = page.Id }, new PageResponseDto
         {
-            Id = page.Id,
-            WorkspaceId = page.WorkspaceId,
-            ParentPageId = page.ParentPageId,
-            CreatedByUserId = page.CreatedByUserId,
-            Title = page.Title,
-            Slug = page.Slug,
-            Content = page.Content,
-            PlainText = page.PlainText,
-            IsArchived = page.IsArchived,
-            SortOrder = page.SortOrder,
-            CreatedAt = page.CreatedAt,
-            UpdatedAt = page.UpdatedAt
+            Id = createdPage.Id,
+            WorkspaceId = createdPage.WorkspaceId,
+            ParentPageId = createdPage.ParentPageId,
+            CreatedByUserId = createdPage.CreatedByUserId,
+            CreatedByUsername = createdPage.CreatedByUser.Username,
+            Title = createdPage.Title,
+            Slug = createdPage.Slug,
+            Content = createdPage.Content,
+            PlainText = createdPage.PlainText,
+            IsArchived = createdPage.IsArchived,
+            SortOrder = createdPage.SortOrder,
+            CreatedAt = createdPage.CreatedAt,
+            UpdatedAt = createdPage.UpdatedAt
         });
     }
 
@@ -126,17 +273,35 @@ public class PagesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var page = await _context.Pages.FindAsync(id);
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var page = await _context.Pages
+            .Include(p => p.CreatedByUser)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         if (page == null)
             return NotFound(new { message = "Page not found." });
+
+        // Enforce edit permissions: Creator, workspace member, or accepted shared page with "Write" permission
+        var isCreator = page.CreatedByUserId == userId;
+        var isWorkspaceMember = await _context.WorkspaceMembers.AnyAsync(m => m.WorkspaceId == page.WorkspaceId && m.UserId == userId)
+            || await _context.Workspaces.AnyAsync(w => w.Id == page.WorkspaceId && w.OwnerUserId == userId);
+        var isSharedWriter = await _context.SharedPages.AnyAsync(sp => sp.PageId == id && sp.SharedWithUserId == userId && sp.Permission == "Write" && sp.Status == "Accepted");
+
+        if (!isCreator && !isWorkspaceMember && !isSharedWriter)
+        {
+            return Forbid();
+        }
 
         page.Title = dto.Title;
         page.Content = dto.Content;
         page.PlainText = ExtractPlainText(dto.Content);
         page.UpdatedAt = DateTime.UtcNow;
 
-        // If the title changed, we might want to update the slug as well
         page.Slug = await GenerateUniqueSlugAsync(page.WorkspaceId, dto.Title);
 
         await _context.SaveChangesAsync();
@@ -147,6 +312,7 @@ public class PagesController : ControllerBase
             WorkspaceId = page.WorkspaceId,
             ParentPageId = page.ParentPageId,
             CreatedByUserId = page.CreatedByUserId,
+            CreatedByUsername = page.CreatedByUser.Username,
             Title = page.Title,
             Slug = page.Slug,
             Content = page.Content,
@@ -184,16 +350,139 @@ public class PagesController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id}/share")]
+    public async Task<IActionResult> SharePage(int id, [FromBody] SharePageDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var page = await _context.Pages.FindAsync(id);
+        if (page == null)
+            return NotFound(new { message = "Page not found." });
+
+        // Enforce ownership: only owner can share (Requirement 3)
+        if (page.CreatedByUserId != userId)
+        {
+            return BadRequest(new { message = "You cannot share pages you don't own" });
+        }
+
+        User? targetUser = null;
+        if (dto.UsernameOrEmail.Contains("@"))
+        {
+            targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.UsernameOrEmail);
+        }
+        else
+        {
+            targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == dto.UsernameOrEmail);
+        }
+
+        if (targetUser == null)
+            return NotFound(new { message = "User not found." });
+
+        if (targetUser.Id == userId)
+            return BadRequest(new { message = "You cannot share a page with yourself." });
+
+        var alreadyShared = await _context.SharedPages.AnyAsync(sp => sp.PageId == id && sp.SharedWithUserId == targetUser.Id);
+        if (alreadyShared)
+            return Conflict(new { message = "Page is already shared with this user." });
+
+        var sharedPage = new SharedPage
+        {
+            PageId = id,
+            SharedWithUserId = targetUser.Id,
+            Permission = dto.Permission,
+            Status = "Pending", // Set status to pending (Requirement 1)
+            SharedAt = DateTime.UtcNow
+        };
+
+        _context.SharedPages.Add(sharedPage);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Invitation sent successfully." });
+    }
+
+    [HttpGet("{id}/shared-users")]
+    public async Task<IActionResult> GetSharedUsers(int id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var page = await _context.Pages
+            .Include(p => p.CreatedByUser)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (page == null)
+            return NotFound(new { message = "Page not found." });
+
+        // If they don't own it, they can still view shared users
+        var isCreator = page.CreatedByUserId == userId;
+        var isWorkspaceMember = await _context.WorkspaceMembers.AnyAsync(m => m.WorkspaceId == page.WorkspaceId && m.UserId == userId)
+            || await _context.Workspaces.AnyAsync(w => w.Id == page.WorkspaceId && w.OwnerUserId == userId);
+        var isPageShared = await _context.SharedPages.AnyAsync(sp => sp.PageId == id && sp.SharedWithUserId == userId && sp.Status == "Accepted");
+
+        if (!isCreator && !isWorkspaceMember && !isPageShared)
+        {
+            return Forbid();
+        }
+
+        var sharedUsers = await _context.SharedPages
+            .Where(sp => sp.PageId == id)
+            .Include(sp => sp.SharedWithUser)
+            .Select(sp => new SharedUserDto
+            {
+                Id = sp.SharedWithUser.Id,
+                Username = sp.SharedWithUser.Username,
+                FullName = sp.SharedWithUser.FullName,
+                Email = sp.SharedWithUser.Email,
+                Permission = sp.Permission
+            })
+            .ToListAsync();
+
+        return Ok(sharedUsers);
+    }
+
+    [HttpDelete("{id}/share/{sharedUserId}")]
+    public async Task<IActionResult> RevokePageShare(int id, int sharedUserId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var page = await _context.Pages.FindAsync(id);
+        if (page == null)
+            return NotFound(new { message = "Page not found." });
+
+        if (page.CreatedByUserId != userId)
+            return Forbid();
+
+        var sharedPage = await _context.SharedPages.FirstOrDefaultAsync(sp => sp.PageId == id && sp.SharedWithUserId == sharedUserId);
+        if (sharedPage == null)
+            return NotFound(new { message = "Page is not shared with this user." });
+
+        _context.SharedPages.Remove(sharedPage);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     private string GenerateSlug(string title)
     {
         if (string.IsNullOrWhiteSpace(title)) return "untitled";
 
         var slug = title.ToLowerInvariant().Trim();
-        // Remove invalid characters
         slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[^a-z0-9\s-]", "");
-        // Replace spaces with hyphens
         slug = System.Text.RegularExpressions.Regex.Replace(slug, @"\s+", "-");
-        // Replace double hyphens
         slug = System.Text.RegularExpressions.Regex.Replace(slug, @"-+", "-");
         return slug;
     }
@@ -233,13 +522,11 @@ public class PagesController : ControllerBase
                         }
                     }
                 }
-                sb.Append(" "); // Add space between blocks
+                sb.Append(" ");
             }
-            
+
             var plainText = sb.ToString();
-            // Replace newlines, returns, and tabs with space
             plainText = plainText.Replace("\r", " ").Replace("\n", " ").Replace("\t", " ");
-            // Compress multiple consecutive spaces to a single space
             plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"\s+", " ");
             return plainText.Trim();
         }

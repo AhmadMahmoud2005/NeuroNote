@@ -17,6 +17,15 @@ export interface CreateWorkspaceRequest {
   description?: string;
 }
 
+export interface WorkspaceInvitation {
+  id: number;
+  workspaceId: number;
+  workspaceName: string;
+  invitedByUsername: string;
+  role: string;
+  createdAt: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class WorkspaceService {
   private apiUrl = `${environment.apiUrl}/workspaces`;
@@ -29,5 +38,22 @@ export class WorkspaceService {
 
   createWorkspace(request: CreateWorkspaceRequest): Observable<WorkspaceResponse> {
     return this.http.post<WorkspaceResponse>(this.apiUrl, request);
+  }
+
+  getInvitations(): Observable<WorkspaceInvitation[]> {
+    return this.http.get<WorkspaceInvitation[]>(`${this.apiUrl}/invitations`);
+  }
+
+  inviteUser(workspaceId: number, usernameOrEmail: string, role: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${workspaceId}/invite`, {
+      usernameOrEmail,
+      role
+    });
+  }
+
+  respondToInvitation(invitationId: number, accept: boolean): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/invitations/${invitationId}/respond`, {
+      accept
+    });
   }
 }

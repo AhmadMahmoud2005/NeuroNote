@@ -1,21 +1,54 @@
 <aside class="sidebar">
   <div class="brand">
     <a class="brand-name" routerLink="/all-pages">NeuroNote</a>
-
-    <label class="workspace-label" for="workspace-switcher">Workspace</label>
-    <select
-      id="workspace-switcher"
-      class="workspace-select"
-      [ngModel]="activeWorkspaceId"
-      (ngModelChange)="changeWorkspace($event)"
-    >
-      <option *ngFor="let workspace of workspaces" [ngValue]="workspace.id">
-        {{ workspace.name }}
-      </option>
-    </select>
   </div>
 
-  <nav class="sidebar-nav" aria-label="Workspace navigation">
+  <!-- Workspaces Navigation sections (Personal vs Shared) -->
+  <div class="workspace-nav-section">
+    <!-- Personal workspaces section -->
+    <div class="workspace-section-header" (click)="togglePersonalSection()">
+      <span class="section-arrow" [class.collapsed]="!isPersonalExpanded">▼</span>
+      <span>Personal Workspaces</span>
+    </div>
+    <div class="workspace-section-list" *ngIf="isPersonalExpanded">
+      <div 
+        *ngFor="let ws of personalWorkspaces" 
+        class="workspace-item"
+        [class.active]="ws.id === activeWorkspaceId"
+        (click)="changeWorkspace(ws.id)"
+      >
+        <span class="ws-bullet">•</span>
+        <span class="ws-name-text">{{ ws.name }}</span>
+      </div>
+      <div *ngIf="personalWorkspaces.length === 0" class="empty-ws-msg">No personal workspaces</div>
+    </div>
+
+    <!-- Shared workspaces section -->
+    <div class="workspace-section-header" (click)="toggleSharedSection()" style="margin-top: 0.85rem;">
+      <span class="section-arrow" [class.collapsed]="!isSharedExpanded">▼</span>
+      <span>Shared Workspaces</span>
+    </div>
+    <div class="workspace-section-list" *ngIf="isSharedExpanded">
+      <div 
+        *ngFor="let ws of sharedWorkspaces" 
+        class="workspace-item"
+        [class.active]="ws.id === activeWorkspaceId"
+        (click)="changeWorkspace(ws.id)"
+      >
+        <span class="ws-bullet">•</span>
+        <span class="ws-name-text">{{ ws.name }}</span>
+      </div>
+      <div *ngIf="sharedWorkspaces.length === 0" class="empty-ws-msg">No shared workspaces</div>
+    </div>
+
+    <!-- View all workspaces option -->
+    <a class="view-all-ws-link" routerLink="/workspaces">
+      <span class="ws-bullet">⚙</span>
+      <span>Manage Workspaces</span>
+    </a>
+  </div>
+
+  <nav class="sidebar-nav" aria-label="Workspace navigation" style="margin-top: 1.5rem;">
     <a
       *ngFor="let item of navItems"
       class="nav-item"

@@ -10,7 +10,7 @@
 
       <div class="top-actions">
         <button type="button" class="btn-save" (click)="savePage()">Save Note</button>
-        <button type="button" class="icon-button share" aria-label="Share page"></button>
+        <button type="button" class="icon-button share" *ngIf="pageId" (click)="openShareModal()" aria-label="Share page"></button>
         <button type="button" class="icon-button bell" aria-label="Notifications"></button>
         <button type="button" class="profile-button" aria-label="Profile" routerLink="/settings">{{ getAvatarCharacter() }}</button>
       </div>
@@ -143,6 +143,83 @@
       <div class="modal-actions">
         <button type="button" class="btn-secondary" (click)="cancelLeave()">Stay and Edit</button>
         <button type="button" class="btn-danger" (click)="confirmLeave()">Discard Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Beautiful Share Page Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showShareModal">
+    <div class="modal-card share-card-modal">
+      <div class="modal-header">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+          <polyline points="16 6 12 2 8 6"></polyline>
+          <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg>
+        <h2>Share Note</h2>
+      </div>
+
+      <div *ngIf="isOwnerOfPage">
+        <p class="modal-text">Share access to this note with collaborators by entering their email address or username.</p>
+
+        <!-- Share Messages -->
+        <div class="invite-success" *ngIf="shareSuccessMessage" style="margin-top: 0.5rem; width: auto;">
+          {{ shareSuccessMessage }}
+        </div>
+        <div class="invite-error" *ngIf="shareErrorMessage" style="margin-top: 0.5rem; width: auto;">
+          {{ shareErrorMessage }}
+        </div>
+
+        <div class="share-form-group">
+          <input 
+            type="text" 
+            placeholder="username or email..." 
+            [(ngModel)]="shareUsernameOrEmail"
+            [disabled]="isSharing"
+            class="share-modal-input"
+          />
+          
+          <select [(ngModel)]="sharePermission" class="share-permission-select">
+            <option value="Read">View Only</option>
+            <option value="Write">Can Edit</option>
+          </select>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1rem;">
+          <button type="button" class="btn-secondary" (click)="closeShareModal()">Cancel</button>
+          <button type="button" class="btn-save" (click)="sharePageWithUser()" [disabled]="isSharing || !shareUsernameOrEmail.trim()">
+            {{ isSharing ? 'Sharing...' : 'Share' }}
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="!isOwnerOfPage">
+        <div class="owner-display-info" style="margin-bottom: 0.75rem; font-size: 0.95rem; color: var(--color-neutral); font-weight: 600;">
+          Owner: <strong style="color: var(--color-primary);">{{ pageOwnerUsername }}</strong>
+        </div>
+        <div style="color: #EF4444; font-weight: 700; font-size: 0.9rem; margin-bottom: 1.25rem;">
+          You cannot share pages you don't own
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeShareModal()">Close</button>
+        </div>
+      </div>
+
+      <!-- Shared Users List -->
+      <div class="shared-users-section">
+        <h3>Collaborators</h3>
+        <div class="shared-users-list" *ngIf="sharedUsers.length > 0; else noSharedUsers">
+          <div *ngFor="let user of sharedUsers" class="shared-user-item">
+            <div class="shared-user-info">
+              <span class="shared-user-name">{{ user.fullName }}</span>
+              <span class="shared-user-role">({{ user.permission === 'Write' ? 'Can Edit' : 'View Only' }})</span>
+            </div>
+            <button type="button" class="btn-revoke" *ngIf="isOwnerOfPage" (click)="revokeShare(user.id)">Revoke</button>
+          </div>
+        </div>
+        <ng-template #noSharedUsers>
+          <p class="no-collaborators">This note is private to you and the workspace members.</p>
+        </ng-template>
       </div>
     </div>
   </div>

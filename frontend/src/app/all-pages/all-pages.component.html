@@ -5,6 +5,7 @@
     <header class="topbar">
       <div>
         <h1>Hello, {{ currentUser?.fullName || 'User' }}.</h1>
+        <p class="subtitle">Active Workspace: <strong>{{ activeWorkspaceName }}</strong></p>
       </div>
 
       <div class="topbar-actions">
@@ -16,21 +17,38 @@
             (click)="toggleNotifications()"
           >
             <span class="bell-icon" aria-hidden="true"></span>
-            <span *ngIf="pendingNotifications.length" class="notification-badge"></span>
+            <span *ngIf="pendingInvitations.length + pendingPageInvitations.length > 0" class="notification-badge">{{ pendingInvitations.length + pendingPageInvitations.length }}</span>
           </button>
 
           <div *ngIf="isNotificationsOpen" class="notifications-menu">
-            <div class="menu-heading">Notifications</div>
-
-            <div *ngIf="pendingNotifications.length; else emptyNotifications" class="notification-list">
-              <div *ngFor="let notification of pendingNotifications" class="notification-item">
-                <p>{{ notification.message }}</p>
-                <button type="button" (click)="acceptNotification(notification)">Accept</button>
+            <!-- Workspace Invites Section -->
+            <div class="menu-heading">Workspace Invitations</div>
+            <div *ngIf="pendingInvitations.length; else emptyNotifications" class="notification-list">
+              <div *ngFor="let invite of pendingInvitations" class="notification-item">
+                <p><strong>{{ invite.invitedByUsername }}</strong> invited you to join <strong>{{ invite.workspaceName }}</strong></p>
+                <div class="invite-actions">
+                  <button type="button" class="btn-accept" (click)="respondInvitation(invite, true)">Accept</button>
+                  <button type="button" class="btn-decline" (click)="respondInvitation(invite, false)">Decline</button>
+                </div>
               </div>
             </div>
-
             <ng-template #emptyNotifications>
-              <p class="empty-state">No new notifications</p>
+              <p class="empty-state">No pending workspace invitations</p>
+            </ng-template>
+
+            <!-- Page Invites Section -->
+            <div class="menu-heading" style="margin-top: 1rem; border-top: 1px solid rgba(100, 116, 139, 0.12); padding-top: 0.75rem;">Page Invitations</div>
+            <div *ngIf="pendingPageInvitations.length; else emptyPageNotifications" class="notification-list">
+              <div *ngFor="let invite of pendingPageInvitations" class="notification-item">
+                <p><strong>{{ invite.sharedByUsername }}</strong> shared note <strong>"{{ invite.pageTitle }}"</strong> with you ({{ invite.permission === 'Write' ? 'Edit' : 'View' }})</p>
+                <div class="invite-actions">
+                  <button type="button" class="btn-accept" (click)="respondPageInvitation(invite, true)">Accept</button>
+                  <button type="button" class="btn-decline" (click)="respondPageInvitation(invite, false)">Decline</button>
+                </div>
+              </div>
+            </div>
+            <ng-template #emptyPageNotifications>
+              <p class="empty-state">No pending page invitations</p>
             </ng-template>
           </div>
         </div>
@@ -43,13 +61,14 @@
 
     <main class="dashboard-grid">
       <section class="notes-section">
+        <!-- Recent Notes Section -->
         <div class="section-header">
-          <h2>Recent Notes</h2>
+          <h2>Workspace Notes</h2>
           <a routerLink="/all-pages">View All</a>
         </div>
 
         <div class="notes-grid">
-          <!-- Real Pages -->
+          <!-- Workspace Pages -->
           <article *ngFor="let page of pages" class="note-card" [routerLink]="['/new-page']" [queryParams]="{ id: page.id }">
             <div class="note-card-top">
               <span class="tag">Note</span>
@@ -60,21 +79,61 @@
             <span class="edited">Edited {{ formatToCairoTime(page.updatedAt || page.createdAt) }}</span>
           </article>
 
-          <!-- Empty State -->
+          <!-- Empty Workspace Pages State -->
           <div *ngIf="pages.length === 0" class="empty-pages-state">
             <p>No notes in this workspace yet. Get started by creating a new page!</p>
             <button type="button" class="create-page-btn" routerLink="/new-page">Create New Page</button>
+          </div>
+        </div>
+
+        <!-- Shared Pages Section -->
+        <div class="section-header" style="margin-top: 3.5rem;">
+          <h2>Shared Notes</h2>
+          <span class="shared-badge">Shared with me</span>
+        </div>
+
+        <div class="notes-grid">
+          <!-- Shared Pages -->
+          <article *ngFor="let page of sharedPages" class="note-card shared-card" [routerLink]="['/new-page']" [queryParams]="{ id: page.id }">
+            <div class="note-card-top">
+              <span class="tag shared-tag">Shared Note</span>
+              <span class="open-icon" aria-hidden="true"></span>
+            </div>
+            <h3>{{ page.title }}</h3>
+            <p>{{ truncate(page.plainText || '', 80) || 'No content yet...' }}</p>
+            <span class="edited">Edited {{ formatToCairoTime(page.updatedAt || page.createdAt) }}</span>
+          </article>
+
+          <!-- Empty Shared Pages State -->
+          <div *ngIf="sharedPages.length === 0" class="empty-pages-state">
+            <p>No notes have been shared with you directly yet.</p>
           </div>
         </div>
       </section>
 
       <aside class="invite-panel">
         <h2>Invite Members</h2>
-        <p>Collaborate with your team. Invite members to this workspace.</p>
+        <p>Collaborate with your team. Invite members to this workspace by email address or username.</p>
 
-        <label class="sr-only" for="member-email">Email address</label>
-        <input id="member-email" type="email" placeholder="email address..." />
-        <button type="button">Send Invite</button>
+        <!-- Invite Messages -->
+        <div class="invite-success" *ngIf="inviteSuccessMessage">
+          {{ inviteSuccessMessage }}
+        </div>
+        <div class="invite-error" *ngIf="inviteErrorMessage">
+          {{ inviteErrorMessage }}
+        </div>
+
+        <label class="sr-only" for="member-email">Username or email address</label>
+        <input 
+          id="member-email" 
+          type="text" 
+          placeholder="username or email..." 
+          [(ngModel)]="inviteInput"
+          [disabled]="isInviting"
+        />
+        <button type="button" (click)="sendWorkspaceInvite()" [disabled]="isInviting || !inviteInput.trim()">
+          {{ isInviting ? 'Inviting...' : 'Send Invite' }}
+        </button>
 
         <a href="#" class="copy-link" (click)="$event.preventDefault()">
           <span class="link-icon" aria-hidden="true"></span>

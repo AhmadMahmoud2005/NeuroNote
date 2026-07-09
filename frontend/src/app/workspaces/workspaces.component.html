@@ -1,0 +1,104 @@
+<div class="workspace-shell">
+  <app-slide-bar></app-slide-bar>
+
+  <section class="page-content">
+    <header class="topbar">
+      <div>
+        <h1>My Workspaces</h1>
+        <p class="subtitle">Organize notes into personal and shared work environments</p>
+      </div>
+    </header>
+
+    <main class="workspaces-grid">
+      <div class="workspaces-lists-column">
+        <!-- Personal Workspaces -->
+        <section class="workspace-list-section">
+          <h2>Personal Workspaces</h2>
+          <div *ngIf="isLoading" class="loading-state">
+            <p>Loading workspaces...</p>
+          </div>
+          <div *ngIf="!isLoading && personalWorkspaces.length === 0" class="empty-state-box">
+            <p>You don't have any personal workspaces yet.</p>
+          </div>
+          <div *ngIf="!isLoading && personalWorkspaces.length > 0" class="workspaces-cards-grid">
+            <div *ngFor="let ws of personalWorkspaces" class="ws-card">
+              <div class="ws-card-body">
+                <h3>{{ ws.name }}</h3>
+                <p>{{ ws.description || 'No description provided.' }}</p>
+              </div>
+              <div class="ws-card-actions">
+                <button type="button" class="btn-open" (click)="openWorkspace(ws.id)">Open</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Shared Workspaces -->
+        <section class="workspace-list-section" style="margin-top: 2.5rem;">
+          <h2>Shared Workspaces</h2>
+          <div *ngIf="isLoading" class="loading-state">
+            <p>Loading workspaces...</p>
+          </div>
+          <div *ngIf="!isLoading && sharedWorkspaces.length === 0" class="empty-state-box">
+            <p>No workspaces have been shared with you yet.</p>
+          </div>
+          <div *ngIf="!isLoading && sharedWorkspaces.length > 0" class="workspaces-cards-grid">
+            <div *ngFor="let ws of sharedWorkspaces" class="ws-card shared-ws-card">
+              <div class="ws-card-body">
+                <h3>{{ ws.name }}</h3>
+                <p>{{ ws.description || 'No description provided.' }}</p>
+              </div>
+              <div class="ws-card-actions">
+                <button type="button" class="btn-open" (click)="openWorkspace(ws.id)">Open</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="create-workspace-panel">
+        <h2>Create Workspace</h2>
+        <p>Start a new workspace to organize related notes.</p>
+
+        <!-- Create messages -->
+        <div class="invite-success" *ngIf="successMessage">
+          {{ successMessage }}
+        </div>
+        <div class="invite-error" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+
+        <form (ngSubmit)="onSubmit()" #wsForm="ngForm" novalidate>
+          <div class="form-group">
+            <label for="ws-name">WORKSPACE NAME</label>
+            <input 
+              id="ws-name" 
+              type="text" 
+              placeholder="e.g. Project Alpha" 
+              [(ngModel)]="name" 
+              name="name"
+              required 
+              #nameField="ngModel"
+              [disabled]="isSubmitting"
+            />
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="ws-desc">DESCRIPTION (OPTIONAL)</label>
+            <textarea 
+              id="ws-desc" 
+              placeholder="What is this workspace about..." 
+              [(ngModel)]="description" 
+              name="description"
+              [disabled]="isSubmitting"
+            ></textarea>
+          </div>
+
+          <button type="submit" class="btn-create" [disabled]="wsForm.invalid || isSubmitting || !name.trim()">
+            {{ isSubmitting ? 'Creating...' : 'Create Workspace' }}
+          </button>
+        </form>
+      </aside>
+    </main>
+  </section>
+</div>

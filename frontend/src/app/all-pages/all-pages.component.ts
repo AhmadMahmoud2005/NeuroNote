@@ -1,65 +1,124 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { SlideBarComponent } from '../slide-bar/slide-bar.component';
 import { AuthService } from '../services/auth.service';
 import { AuthUser } from '../models/auth.model';
-import { PageService, PageResponse } from '../services/page.service';
-
-interface WorkspaceOption {
-  id: number;
-  name: string;
-}
-
-interface NotificationItem {
-  id: number;
-  message: string;
-  workspaceId: number;
-  isAccepted: boolean;
-}
+import { PageService, PageResponse, PageInvitation } from '../services/page.service';
+import { WorkspaceService, WorkspaceInvitation, WorkspaceResponse } from '../services/workspace.service';
 
 @Component({
   selector: 'app-all-pages',
   standalone: true,
-  imports: [CommonModule, SlideBarComponent, RouterLink],
+  imports: [CommonModule, SlideBarComponent, RouterLink, FormsModule],
   templateUrl: './all-pages.component.html',
   styleUrl: './all-pages.component.css'
 })
 export class AllPagesComponent implements OnInit {
-  activeWorkspace?: WorkspaceOption;
-  notifications: NotificationItem[] = [];
+  activeWorkspaceId = 1;
+  activeWorkspaceName = 'Personal Workspace';
+  workspaces: WorkspaceResponse[] = [];
+  pendingInvitations: WorkspaceInvitation[] = [];
+  pendingPageInvitations: PageInvitation[] = [];
   isNotificationsOpen = false;
   currentUser: AuthUser | null = null;
   pages: PageResponse[] = [];
+  sharedPages: PageResponse[] = [];
+
+  // Workspace Invite Form States
+  inviteInput = '';
+  inviteSuccessMessage = '';
+  inviteErrorMessage = '';
+  isInviting = false;
 
   constructor(
     private readonly authService: AuthService,
-    private readonly pageService: PageService
+    private readonly pageService: PageService,
+    private readonly workspaceService: WorkspaceService
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.currentUser;
-    this.activeWorkspace = this.getActiveWorkspace();
-    this.notifications = this.loadNotifications();
-    this.loadPages();
+    this.activeWorkspaceId = Number(localStorage.getItem('activeWorkspaceId')) || 1;
+
+    this.loadWorkspacesAndData();
+    this.loadInvitations();
   }
 
-  get pendingNotifications(): NotificationItem[] {
-    return this.notifications.filter(notification => !notification.isAccepted);
+  loadWorkspacesAndData(): void {
+    this.workspaceService.getWorkspaces().subscribe({
+      next: (workspaces) => {
+        this.workspaces = workspaces;
+        const currentWS = workspaces.find(w => w.id === this.activeWorkspaceId);
+        if (currentWS) {
+          this.activeWorkspaceName = currentWS.name;
+        } else if (workspaces.length > 0) {
+          this.activeWorkspaceId = workspaces[0].id;
+          this.activeWorkspaceName = workspaces[0].name;
+          localStorage.setItem('activeWorkspaceId', String(workspaces[0].id));
+        }
+        this.loadPages();
+        this.loadSharedPages();
+      },
+      error: (err) => {
+        console.error('Error loading workspaces:', err);
+        this.loadPages();
+        this.loadSharedPages();
+      }
+    });
+  }
+
+  loadInvitations(): void {
+    this.workspaceService.getInvitations().subscribe({
+      next: (invitations) => {
+        this.pendingInvitations = invitations;
+      },
+      error: (err) => {
+        console.error('Error loading workspace invitations:', err);
+      }
+    });
+
+    this.pageService.getPageInvitations().subscribe({
+      next: (invitations) => {
+        this.pendingPageInvitations = invitations;
+      },
+      error: (err) => {
+        console.error('Error loading page invitations:', err);
+      }
+    });
   }
 
   toggleNotifications(): void {
     this.isNotificationsOpen = !this.isNotificationsOpen;
   }
 
-  acceptNotification(notification: NotificationItem): void {
-    this.notifications = this.notifications.map(item =>
-      item.id === notification.id ? { ...item, isAccepted: true } : item
-    );
-    localStorage.setItem('notifications', JSON.stringify(this.notifications));
-    localStorage.setItem('activeWorkspaceId', String(notification.workspaceId));
-    this.isNotificationsOpen = false;
-    window.location.reload();
+  respondInvitation(invitation: WorkspaceInvitation, accept: boolean): void {
+    this.workspaceService.respondToInvitation(invitation.id, accept).subscribe({
+      next: () => {
+        this.loadInvitations();
+        if (accept) {
+          // Switch to accepted workspace and reload
+          localStorage.setItem('activeWorkspaceId', String(invitation.workspaceId));
+          window.location.reload();
+        }
+      },
+      error: (err) => {
+        console.error('Error responding to workspace invitation:', err);
+      }
+    });
+  }
+
+  respondPageInvitation(invitation: PageInvitation, accept: boolean): void {
+    this.pageService.respondToPageInvitation(invitation.id, accept).subscribe({
+      next: () => {
+        this.loadInvitations();
+        this.loadSharedPages();
+      },
+      error: (err) => {
+        console.error('Error responding to page invitation:', err);
+      }
+    });
   }
 
   getAvatarCharacter(): string {
@@ -69,21 +128,50 @@ export class AllPagesComponent implements OnInit {
   }
 
   loadPages(): void {
-    if (this.activeWorkspace) {
-      this.pageService.getPages(this.activeWorkspace.id).subscribe({
-        next: (pages) => {
-          this.pages = pages;
-        },
-        error: (err) => {
-          console.error('Error loading pages:', err);
-        }
-      });
-    }
+    this.pageService.getPages(this.activeWorkspaceId).subscribe({
+      next: (pages) => {
+        this.pages = pages;
+      },
+      error: (err) => {
+        console.error('Error loading pages:', err);
+      }
+    });
+  }
+
+  loadSharedPages(): void {
+    this.pageService.getSharedPages().subscribe({
+      next: (pages) => {
+        this.sharedPages = pages;
+      },
+      error: (err) => {
+        console.error('Error loading shared pages:', err);
+      }
+    });
+  }
+
+  sendWorkspaceInvite(): void {
+    const input = this.inviteInput.trim();
+    if (!input) return;
+
+    this.isInviting = true;
+    this.inviteSuccessMessage = '';
+    this.inviteErrorMessage = '';
+
+    this.workspaceService.inviteUser(this.activeWorkspaceId, input, 'Member').subscribe({
+      next: (res) => {
+        this.isInviting = false;
+        this.inviteSuccessMessage = res.message || 'Invitation sent successfully!';
+        this.inviteInput = '';
+      },
+      error: (err) => {
+        this.isInviting = false;
+        this.inviteErrorMessage = err.error?.message || 'Failed to send invitation. Make sure the user exists and is not already a member.';
+      }
+    });
   }
 
   truncate(html: string, length: number): string {
     if (!html) return '';
-    // Strip HTML tags for clean preview text
     const text = html.replace(/<[^>]*>/g, '');
     return text.length > length ? text.substring(0, length) + '...' : text;
   }
@@ -96,65 +184,5 @@ export class AllPagesComponent implements OnInit {
       minute: '2-digit',
       hour12: true
     });
-  }
-
-  private getActiveWorkspace(): WorkspaceOption {
-    const workspaces = this.loadWorkspaces();
-    const activeWorkspaceId = Number(localStorage.getItem('activeWorkspaceId')) || workspaces[0].id;
-
-    return workspaces.find(workspace => workspace.id === activeWorkspaceId) ?? workspaces[0];
-  }
-
-  private loadWorkspaces(): WorkspaceOption[] {
-    const storedWorkspaces = localStorage.getItem('workspaces');
-
-    if (storedWorkspaces) {
-      try {
-        const parsedWorkspaces = JSON.parse(storedWorkspaces) as WorkspaceOption[];
-
-        if (Array.isArray(parsedWorkspaces) && parsedWorkspaces.length > 0) {
-          return parsedWorkspaces;
-        }
-      } catch {
-        localStorage.removeItem('workspaces');
-      }
-    }
-
-    const defaultWorkspaces = [
-      { id: 1, name: 'Deep Work Workspace' },
-      { id: 2, name: 'Product Team' },
-      { id: 3, name: 'Personal Notes' }
-    ];
-
-    localStorage.setItem('workspaces', JSON.stringify(defaultWorkspaces));
-    return defaultWorkspaces;
-  }
-
-  private loadNotifications(): NotificationItem[] {
-    const storedNotifications = localStorage.getItem('notifications');
-
-    if (storedNotifications) {
-      try {
-        const parsedNotifications = JSON.parse(storedNotifications) as NotificationItem[];
-
-        if (Array.isArray(parsedNotifications)) {
-          return parsedNotifications;
-        }
-      } catch {
-        localStorage.removeItem('notifications');
-      }
-    }
-
-    const defaultNotifications = [
-      {
-        id: 1,
-        message: 'Ali invited you to join Deep Work Workspace',
-        workspaceId: 1,
-        isAccepted: false
-      }
-    ];
-
-    localStorage.setItem('notifications', JSON.stringify(defaultNotifications));
-    return defaultNotifications;
   }
 }

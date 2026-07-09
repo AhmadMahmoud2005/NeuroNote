@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NeuroNote.Api.Data;
 
@@ -11,9 +12,11 @@ using NeuroNote.Api.Data;
 namespace NeuroNote.Api.Migrations
 {
     [DbContext(typeof(NeuroNoteDbContext))]
-    partial class NeuroNoteDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709175746_AddSharedPageTable")]
+    partial class AddSharedPageTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -311,12 +314,6 @@ namespace NeuroNote.Api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("AcceptedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeclinedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("PageId")
                         .HasColumnType("int");
 
@@ -329,13 +326,6 @@ namespace NeuroNote.Api.Migrations
 
                     b.Property<int>("SharedWithUserId")
                         .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasDefaultValue("Pending");
 
                     b.HasKey("Id");
 

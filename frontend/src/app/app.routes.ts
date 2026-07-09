@@ -8,6 +8,8 @@ import { TasksComponent } from './tasks/tasks.component';
 import { NewPageComponent } from './new-page/new-page.component';
 import { SearchComponent } from './search/search.component';
 import { SettingsComponent } from './settings/settings.component';
+import { WorkspacesComponent } from './workspaces/workspaces.component';
+import { SharedNotesComponent } from './shared-notes/shared-notes.component';
 import { authGuard } from './guards/auth.guard';
 import { pendingChangesGuard } from './guards/pending-changes.guard';
 
@@ -21,5 +23,7 @@ export const routes: Routes = [
   { path: 'tasks', component: TasksComponent, canActivate: [authGuard] },
   { path: 'new-page', component: NewPageComponent, canActivate: [authGuard], canDeactivate: [pendingChangesGuard] },
   { path: 'search', component: SearchComponent, canActivate: [authGuard] },
-  { path: 'settings', component: SettingsComponent, canActivate: [authGuard] }
+  { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
+  { path: 'workspaces', component: WorkspacesComponent, canActivate: [authGuard] },
+  { path: 'shared-notes', component: SharedNotesComponent, canActivate: [authGuard] }
 ];

@@ -15,6 +15,7 @@ public class NeuroNoteDbContext(DbContextOptions<NeuroNoteDbContext> options) : 
     public DbSet<Block> Blocks => Set<Block>();
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+    public DbSet<SharedPage> SharedPages => Set<SharedPage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -197,6 +198,22 @@ public class NeuroNoteDbContext(DbContextOptions<NeuroNoteDbContext> options) : 
                 .WithMany(page => page.ActivityLogs)
                 .HasForeignKey(activity => activity.PageId)
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<SharedPage>(entity =>
+        {
+            entity.ToTable("SharedPages");
+            entity.HasKey(sp => sp.Id);
+            entity.HasIndex(sp => new { sp.PageId, sp.SharedWithUserId }).IsUnique();
+            entity.Property(sp => sp.Status).HasMaxLength(40).HasDefaultValue("Pending");
+            entity.HasOne(sp => sp.Page)
+                .WithMany()
+                .HasForeignKey(sp => sp.PageId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(sp => sp.SharedWithUser)
+                .WithMany()
+                .HasForeignKey(sp => sp.SharedWithUserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
