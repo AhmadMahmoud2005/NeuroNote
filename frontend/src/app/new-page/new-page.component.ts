@@ -47,7 +47,9 @@ export class NewPageComponent implements OnInit, OnDestroy {
   currentFontSize = 16;
   showColorDropdown = false;
   showHighlightDropdown = false;
+  showHeadingDropdown = false;
   isInteractingWithToolbar = false;
+  savedRange: Range | null = null;
 
   // Warn on Leave States
   isDirty = false;
@@ -126,7 +128,27 @@ export class NewPageComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.isInteractingWithToolbar = false;
       this.onSelectionChange();
-    }, 150);
+    }, 200); // slightly higher delay to ensure focus shifts
+  }
+
+  restoreSelection() {
+    if (this.savedRange) {
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(this.savedRange.cloneRange());
+      }
+    }
+  }
+
+  formatToCairoTime(dateStr: string | Date | null | undefined): string {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleTimeString('en-US', {
+      timeZone: 'Africa/Cairo',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   }
 
   // Detect selection changes to toggle the formatting toolbar
@@ -142,6 +164,7 @@ export class NewPageComponent implements OnInit, OnDestroy {
       const range = selection.getRangeAt(0);
       const editorElement = this.editor?.nativeElement;
       if (editorElement && (editorElement.contains(range.commonAncestorContainer) || editorElement === range.commonAncestorContainer)) {
+        this.savedRange = range.cloneRange(); // Save range!
         this.showToolbar = true;
 
         // Try to detect the active font size of the selection to set the size control
@@ -161,9 +184,13 @@ export class NewPageComponent implements OnInit, OnDestroy {
         return;
       }
     }
+    
+    // Selection cleared completely outside toolbar interaction
     this.showToolbar = false;
     this.showColorDropdown = false;
     this.showHighlightDropdown = false;
+    this.showHeadingDropdown = false;
+    this.savedRange = null;
   }
 
   getAvatarCharacter(): string {
@@ -194,7 +221,7 @@ export class NewPageComponent implements OnInit, OnDestroy {
       }).subscribe({
         next: () => {
           this.isDirty = false;
-          this.lastSavedLabel = `Saved ${new Date().toLocaleTimeString()}`;
+          this.lastSavedLabel = `Saved ${this.formatToCairoTime(new Date())}`;
         },
         error: (err) => {
           console.error('Error saving page:', err);
@@ -211,7 +238,7 @@ export class NewPageComponent implements OnInit, OnDestroy {
         next: (page) => {
           this.pageId = page.id;
           this.isDirty = false;
-          this.lastSavedLabel = `Saved ${new Date().toLocaleTimeString()}`;
+          this.lastSavedLabel = `Saved ${this.formatToCairoTime(new Date())}`;
           this.router.navigate([], {
             relativeTo: this.route,
             queryParams: { id: page.id },
@@ -251,44 +278,59 @@ export class NewPageComponent implements OnInit, OnDestroy {
 
   // Formatting Actions
   format(command: 'bold' | 'italic' | 'underline') {
+    this.restoreSelection();
     document.execCommand(command);
+    this.isDirty = true;
+  }
+
+  setBlockType(tag: string) {
+    this.restoreSelection();
+    document.execCommand('formatBlock', false, tag);
+    this.showHeadingDropdown = false;
     this.isDirty = true;
   }
 
   // Custom Font Size controls
   increaseSize() {
+    this.restoreSelection();
     this.currentFontSize = Math.min(72, this.currentFontSize + 2);
     this.applyFontSize();
   }
 
   decreaseSize() {
+    this.restoreSelection();
     this.currentFontSize = Math.max(8, this.currentFontSize - 2);
     this.applyFontSize();
   }
 
   onFontSizeChange() {
+    this.restoreSelection();
     if (this.currentFontSize < 8) this.currentFontSize = 8;
     if (this.currentFontSize > 72) this.currentFontSize = 72;
     this.applyFontSize();
   }
 
   applyFontSize() {
+    this.restoreSelection();
     this.applySelectionStyle('font-size', `${this.currentFontSize}px`);
   }
 
   applyTextColor(color: string) {
+    this.restoreSelection();
     document.execCommand('foreColor', false, color);
     this.showColorDropdown = false;
     this.isDirty = true;
   }
 
   applyHighlightColor(color: string) {
+    this.restoreSelection();
     document.execCommand('hiliteColor', false, color);
     this.showHighlightDropdown = false;
     this.isDirty = true;
   }
 
   private applySelectionStyle(styleName: string, value: string) {
+    this.restoreSelection();
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.toString().length === 0) return;
 
@@ -349,7 +391,7 @@ export class NewPageComponent implements OnInit, OnDestroy {
         this.title = page.title;
         // Parse the stored JSON content back into styled HTML to render in editor
         this.contentHtml = this.jsonToHtml(page.content || '');
-        this.lastSavedLabel = `Saved ${new Date(page.updatedAt || page.createdAt).toLocaleTimeString()}`;
+        this.lastSavedLabel = `Saved ${this.formatToCairoTime(page.updatedAt || page.createdAt)}`;
         this.isDirty = false;
 
         if (this.editor) {
@@ -364,6 +406,7 @@ export class NewPageComponent implements OnInit, OnDestroy {
   }
 
   resetFormat() {
+    this.restoreSelection();
     document.execCommand('removeFormat');
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0 && selection.toString().length > 0) {
@@ -371,6 +414,10 @@ export class NewPageComponent implements OnInit, OnDestroy {
       const span = document.createElement('span');
       span.style.fontSize = '16px';
       span.style.color = '#0F172A';
+      span.style.fontWeight = 'normal';
+      span.style.fontStyle = 'normal';
+      span.style.textDecoration = 'none';
+      span.style.backgroundColor = 'transparent';
       try {
         range.surroundContents(span);
       } catch (e) {
@@ -379,6 +426,12 @@ export class NewPageComponent implements OnInit, OnDestroy {
         range.insertNode(span);
       }
       this.currentFontSize = 16;
+
+      const newRange = document.createRange();
+      newRange.selectNode(span);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+      this.savedRange = newRange;
     }
     this.isDirty = true;
   }
@@ -472,13 +525,22 @@ export class NewPageComponent implements OnInit, OnDestroy {
         if (tagName === 'B' || tagName === 'STRONG') localStyles.bold = true;
         if (tagName === 'I' || tagName === 'EM') localStyles.italic = true;
         if (tagName === 'U') localStyles.underline = true;
+        if (tagName === 'FONT') {
+          const fontColor = el.getAttribute('color');
+          if (fontColor) localStyles.color = fontColor;
+        }
 
         if (style.fontWeight === 'bold' || style.fontWeight === '700') localStyles.bold = true;
         if (style.fontStyle === 'italic') localStyles.italic = true;
         if (style.textDecoration && style.textDecoration.includes('underline')) localStyles.underline = true;
 
         if (style.fontSize) localStyles.size = style.fontSize;
-        if (style.color) localStyles.color = style.color;
+        if (style.color) {
+          localStyles.color = style.color;
+        } else if (tagName === 'FONT') {
+          const fontColor = el.getAttribute('color');
+          if (fontColor) localStyles.color = fontColor;
+        }
 
         if (style.backgroundColor && style.backgroundColor !== 'transparent') {
           localStyles.highlight = style.backgroundColor;

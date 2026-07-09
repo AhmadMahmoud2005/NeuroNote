@@ -50,6 +50,17 @@
         <button type="button" class="tool-button italic" (click)="format('italic')" (mousedown)="$event.preventDefault()" aria-label="Italic">I</button>
         <button type="button" class="tool-button underline" (click)="format('underline')" (mousedown)="$event.preventDefault()" aria-label="Underline">U</button>
         
+        <!-- Heading Block Type Dropdown -->
+        <div class="dropdown-wrapper">
+          <button type="button" class="tool-button heading-btn" (click)="showHeadingDropdown = !showHeadingDropdown" (mousedown)="$event.preventDefault()" title="Text block type">H</button>
+          <div class="color-dropdown heading-dropdown" *ngIf="showHeadingDropdown">
+            <button type="button" class="heading-option-btn h1-opt" (click)="setBlockType('h1')" (mousedown)="$event.preventDefault()">H1 Title</button>
+            <button type="button" class="heading-option-btn h2-opt" (click)="setBlockType('h2')" (mousedown)="$event.preventDefault()">H2 Subtitle</button>
+            <button type="button" class="heading-option-btn h3-opt" (click)="setBlockType('h3')" (mousedown)="$event.preventDefault()">H3 Section</button>
+            <button type="button" class="heading-option-btn p-opt" (click)="setBlockType('p')" (mousedown)="$event.preventDefault()">Normal Paragraph</button>
+          </div>
+        </div>
+
         <div class="separator"></div>
 
         <!-- Text Color -->

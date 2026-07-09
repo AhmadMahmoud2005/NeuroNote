@@ -88,6 +88,16 @@ export class AllPagesComponent implements OnInit {
     return text.length > length ? text.substring(0, length) + '...' : text;
   }
 
+  formatToCairoTime(dateStr: string | Date | null | undefined): string {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleTimeString('en-US', {
+      timeZone: 'Africa/Cairo',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+
   private getActiveWorkspace(): WorkspaceOption {
     const workspaces = this.loadWorkspaces();
     const activeWorkspaceId = Number(localStorage.getItem('activeWorkspaceId')) || workspaces[0].id;

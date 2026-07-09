@@ -233,9 +233,15 @@ public class PagesController : ControllerBase
                         }
                     }
                 }
-                sb.AppendLine();
+                sb.Append(" "); // Add space between blocks
             }
-            return sb.ToString().Trim();
+            
+            var plainText = sb.ToString();
+            // Replace newlines, returns, and tabs with space
+            plainText = plainText.Replace("\r", " ").Replace("\n", " ").Replace("\t", " ");
+            // Compress multiple consecutive spaces to a single space
+            plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"\s+", " ");
+            return plainText.Trim();
         }
         catch
         {

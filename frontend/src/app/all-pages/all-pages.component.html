@@ -57,7 +57,7 @@
             </div>
             <h3>{{ page.title }}</h3>
             <p>{{ truncate(page.plainText || '', 80) || 'No content yet...' }}</p>
-            <span class="edited">Edited {{ page.updatedAt ? (page.updatedAt | date:'shortTime') : (page.createdAt | date:'shortTime') }}</span>
+            <span class="edited">Edited {{ formatToCairoTime(page.updatedAt || page.createdAt) }}</span>
           </article>
 
           <!-- Empty State -->
