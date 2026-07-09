@@ -1,13 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { SlideBarComponent } from '../slide-bar/slide-bar.component';
+import { WorkspaceTopbarComponent } from '../workspace-topbar/workspace-topbar.component';
 import { SettingsService, UserProfile } from '../services/settings.service';
+import { ThemeService } from '../services/theme.service';
+
+type SettingsSection = 'profile' | 'appearance';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, SlideBarComponent],
+  imports: [CommonModule, FormsModule, SlideBarComponent, WorkspaceTopbarComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css'
 })
@@ -19,6 +24,7 @@ export class SettingsComponent implements OnInit {
   statusMessage = '';
   isDarkMode = false;
   isCompactLayout = true;
+  activeSection: SettingsSection = 'profile';
 
   profile: UserProfile = {
     id: 1,
@@ -28,17 +34,34 @@ export class SettingsComponent implements OnInit {
     avatarUrl: ''
   };
 
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly themeService: ThemeService,
+    private readonly route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
     this.userId = Number(localStorage.getItem('userId')) || 1;
-    this.isDarkMode = localStorage.getItem('theme') === 'dark';
-    this.isCompactLayout = localStorage.getItem('compactLayout') !== 'false';
-    this.applyTheme();
+    this.isDarkMode = this.themeService.isDarkMode();
+    this.isCompactLayout = this.themeService.isCompactLayout();
+
+    this.route.fragment.subscribe(fragment => {
+      if (fragment === 'appearance') {
+        this.activeSection = 'appearance';
+        this.scrollToSection('appearance');
+      } else {
+        this.activeSection = 'profile';
+      }
+    });
 
     this.settingsService.getProfile(this.userId).subscribe(profile => {
       this.profile = profile;
     });
+  }
+
+  showSection(section: SettingsSection): void {
+    this.activeSection = section;
+    this.scrollToSection(section);
   }
 
   saveProfile(): void {
@@ -84,19 +107,16 @@ export class SettingsComponent implements OnInit {
   }
 
   toggleDarkMode(): void {
-    this.isDarkMode = !this.isDarkMode;
-    localStorage.setItem('theme', this.isDarkMode ? 'dark' : 'light');
-    this.applyTheme();
+    this.isDarkMode = this.themeService.toggleDarkMode();
   }
 
   toggleCompactLayout(): void {
-    this.isCompactLayout = !this.isCompactLayout;
-    localStorage.setItem('compactLayout', String(this.isCompactLayout));
-    document.body.classList.toggle('compact-layout', this.isCompactLayout);
+    this.isCompactLayout = this.themeService.toggleCompactLayout();
   }
 
-  private applyTheme(): void {
-    document.body.classList.toggle('dark-theme', this.isDarkMode);
-    document.body.classList.toggle('compact-layout', this.isCompactLayout);
+  private scrollToSection(section: SettingsSection): void {
+    window.setTimeout(() => {
+      document.getElementById(section)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
   }
 }

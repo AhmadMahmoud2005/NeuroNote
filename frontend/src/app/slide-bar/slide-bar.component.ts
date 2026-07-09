@@ -2,11 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-
-interface WorkspaceOption {
-  id: number;
-  name: string;
-}
+import { WorkspacesService, Workspace } from '../services/workspaces.service';
 
 @Component({
   selector: 'app-slide-bar',
@@ -17,21 +13,31 @@ interface WorkspaceOption {
 })
 export class SlideBarComponent implements OnInit {
   activeWorkspaceId = 1;
-  workspaces: WorkspaceOption[] = [];
+  workspaces: Workspace[] = [];
 
   readonly navItems = [
     { label: 'Search', icon: 'search', route: '/search' },
     { label: 'New Page', icon: 'plus', route: '/new-page' },
     { label: 'All Pages', icon: 'page', route: '/all-pages' },
     { label: 'Tasks', icon: 'check', route: '/tasks' }
-  
   ];
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly workspacesService: WorkspacesService
+  ) {}
 
   ngOnInit(): void {
-    this.workspaces = this.loadWorkspaces();
-    this.activeWorkspaceId = this.getActiveWorkspaceId();
+    this.workspacesService.getAll().subscribe({
+      next: workspaces => {
+        this.workspaces = workspaces;
+        this.activeWorkspaceId = this.getActiveWorkspaceId();
+      },
+      error: () => {
+        this.workspaces = this.loadWorkspacesFallback();
+        this.activeWorkspaceId = this.getActiveWorkspaceId();
+      }
+    });
   }
 
   changeWorkspace(workspaceId: string | number): void {
@@ -40,7 +46,7 @@ export class SlideBarComponent implements OnInit {
   }
 
   isActive(route: string): boolean {
-    return this.router.url === route;
+    return this.router.url === route || this.router.url.startsWith(`${route}/`);
   }
 
   private getActiveWorkspaceId(): number {
@@ -55,12 +61,12 @@ export class SlideBarComponent implements OnInit {
     return fallbackId;
   }
 
-  private loadWorkspaces(): WorkspaceOption[] {
+  private loadWorkspacesFallback(): Workspace[] {
     const storedWorkspaces = localStorage.getItem('workspaces');
 
     if (storedWorkspaces) {
       try {
-        const parsedWorkspaces = JSON.parse(storedWorkspaces) as WorkspaceOption[];
+        const parsedWorkspaces = JSON.parse(storedWorkspaces) as Workspace[];
 
         if (Array.isArray(parsedWorkspaces) && parsedWorkspaces.length > 0) {
           return parsedWorkspaces;
@@ -70,13 +76,6 @@ export class SlideBarComponent implements OnInit {
       }
     }
 
-    const defaultWorkspaces = [
-      { id: 1, name: 'Deep Work Workspace' },
-      { id: 2, name: 'Product Team' },
-      { id: 3, name: 'Personal Notes' }
-    ];
-
-    localStorage.setItem('workspaces', JSON.stringify(defaultWorkspaces));
-    return defaultWorkspaces;
+    return [];
   }
 }

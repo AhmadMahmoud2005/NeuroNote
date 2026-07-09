@@ -4,10 +4,7 @@
   <section class="settings-page">
     <header class="settings-topbar">
       <div></div>
-      <div class="top-icons">
-        <button type="button" class="bell-icon" aria-label="Notifications"></button>
-        <button type="button" class="profile-icon" aria-label="Profile">A</button>
-      </div>
+      <app-workspace-topbar></app-workspace-topbar>
     </header>
 
     <main class="settings-layout">
@@ -16,8 +13,8 @@
         <p>Manage your account settings and preferences.</p>
 
         <nav aria-label="Settings sections">
-          <a href="#profile" class="active">Profile</a>
-          <a href="#appearance">Appearance</a>
+          <button type="button" [class.active]="activeSection === 'profile'" (click)="showSection('profile')">Profile</button>
+          <button type="button" [class.active]="activeSection === 'appearance'" (click)="showSection('appearance')">Appearance</button>
         </nav>
       </aside>
 

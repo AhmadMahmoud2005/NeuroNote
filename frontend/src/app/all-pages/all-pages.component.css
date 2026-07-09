@@ -201,10 +201,42 @@ h2 {
   font-weight: 800;
 }
 
-.section-header a {
+.section-header a,
+.view-all-btn {
   color: var(--color-primary);
   font-size: 0.85rem;
   font-weight: 800;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.note-card {
+  cursor: pointer;
+}
+
+.note-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.empty-notes {
+  color: var(--color-ternary);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.empty-notes a {
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+.copy-link {
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  background: transparent;
 }
 
 .notes-grid {
@@ -418,3 +450,50 @@ body.dark-theme .open-icon::before {
 body.dark-theme .copy-link {
   border-color: rgba(148, 163, 184, 0.12);
 }
+
+.notification-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  grid-column: 1 / -1;
+}
+
+.notification-actions button {
+  flex: 1;
+  border-radius: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.4rem;
+  cursor: pointer;
+}
+
+.notification-actions .accept-btn {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+}
+
+.notification-actions .decline-btn {
+  background: transparent;
+  color: var(--color-ternary);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.status-msg {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-top: 0.6rem;
+  padding: 0.5rem;
+  border-radius: 0.35rem;
+}
+
+.status-msg.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.status-msg.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+

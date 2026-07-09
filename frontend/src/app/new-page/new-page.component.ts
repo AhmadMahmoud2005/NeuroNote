@@ -1,7 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { finalize, forkJoin, switchMap } from 'rxjs';
 import { SlideBarComponent } from '../slide-bar/slide-bar.component';
+import { WorkspaceTopbarComponent } from '../workspace-topbar/workspace-topbar.component';
+import { BlocksService } from '../services/blocks.service';
+import { PagesService } from '../services/pages.service';
+import { WorkspacesService, Workspace } from '../services/workspaces.service';
 
 interface DraftPage {
   title: string;
@@ -13,7 +19,7 @@ interface DraftPage {
 @Component({
   selector: 'app-new-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, SlideBarComponent],
+  imports: [CommonModule, FormsModule, SlideBarComponent, WorkspaceTopbarComponent],
   templateUrl: './new-page.component.html',
   styleUrl: './new-page.component.css'
 })
@@ -22,31 +28,54 @@ export class NewPageComponent implements OnInit, OnDestroy {
   @ViewChild('imageInput') imageInput?: ElementRef<HTMLInputElement>;
 
   activeWorkspaceId = 1;
-  title = 'Product Launch Roadmap';
-  contentHtml = `
-    <h2>Overview &amp; Objectives</h2>
-    <p>The upcoming Q3 product launch is centered around enhancing our core cognitive flow experience. We are introducing ambient noise generation, deep work timers, and distraction-free writing modes.</p>
-  `;
+  workspaceName = 'Workspace';
+  pageId: number | null = null;
+  primaryBlockId: number | null = null;
+  title = '';
+  contentHtml = '';
   imageDataUrl = '';
   lastSavedLabel = 'Draft saved locally';
+  isPublishing = false;
+  publishMessage = '';
+  publishError = '';
+  isEditMode = false;
 
   private saveTimer?: number;
 
+  constructor(
+    private readonly pagesService: PagesService,
+    private readonly blocksService: BlocksService,
+    private readonly workspacesService: WorkspacesService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
+  ) {}
+
   ngOnInit(): void {
     this.activeWorkspaceId = Number(localStorage.getItem('activeWorkspaceId')) || 1;
-    this.restoreDraft();
+    this.loadWorkspaceName();
+
+    const routePageId = Number(this.route.snapshot.paramMap.get('id'));
+    if (routePageId) {
+      this.isEditMode = true;
+      this.pageId = routePageId;
+      this.loadExistingPage(routePageId);
+    } else {
+      this.restoreDraft();
+    }
+
     window.addEventListener('beforeunload', this.saveBeforeUnload);
   }
 
   ngAfterViewInit(): void {
-    // Set initial content once to avoid cursor jump issues with [innerHTML]
-    if (this.editor) {
+    if (this.editor && this.contentHtml) {
       this.editor.nativeElement.innerHTML = this.contentHtml;
     }
   }
 
   ngOnDestroy(): void {
-    this.saveDraft();
+    if (!this.isEditMode) {
+      this.saveDraft();
+    }
     window.removeEventListener('beforeunload', this.saveBeforeUnload);
   }
 
@@ -62,6 +91,10 @@ export class NewPageComponent implements OnInit, OnDestroy {
   }
 
   scheduleSave(): void {
+    if (this.isEditMode) {
+      return;
+    }
+
     window.clearTimeout(this.saveTimer);
     this.saveTimer = window.setTimeout(() => this.saveDraft(), 350);
   }
@@ -102,7 +135,9 @@ export class NewPageComponent implements OnInit, OnDestroy {
     const reader = new FileReader();
     reader.onload = () => {
       this.imageDataUrl = String(reader.result);
-      this.saveDraft();
+      if (!this.isEditMode) {
+        this.saveDraft();
+      }
     };
     reader.readAsDataURL(file);
     input.value = '';
@@ -110,7 +145,9 @@ export class NewPageComponent implements OnInit, OnDestroy {
 
   removeImage(): void {
     this.imageDataUrl = '';
-    this.saveDraft();
+    if (!this.isEditMode) {
+      this.saveDraft();
+    }
   }
 
   clearPage(): void {
@@ -122,7 +159,106 @@ export class NewPageComponent implements OnInit, OnDestroy {
       this.editor.nativeElement.innerHTML = '';
     }
 
-    this.saveDraft();
+    if (!this.isEditMode) {
+      this.saveDraft();
+    }
+  }
+
+  publishPage(): void {
+    const title = this.title.trim() || 'Untitled';
+    const content = this.editor?.nativeElement.innerHTML ?? this.contentHtml;
+
+    this.isPublishing = true;
+    this.publishMessage = '';
+    this.publishError = '';
+
+    if (this.isEditMode && this.pageId) {
+      const updatePage$ = this.pagesService.update(this.pageId, {
+        title,
+        isArchived: false
+      });
+
+      const updateBlock$ = this.primaryBlockId
+        ? this.blocksService.update(this.primaryBlockId, { content })
+        : this.blocksService.create(this.pageId, {
+            pageId: this.pageId,
+            type: 'paragraph',
+            content,
+            sortOrder: 0
+          });
+
+      forkJoin([updatePage$, updateBlock$]).pipe(
+        finalize(() => {
+          this.isPublishing = false;
+        })
+      ).subscribe({
+        next: () => {
+          this.publishMessage = 'Page saved successfully.';
+          this.lastSavedLabel = 'Saved to workspace';
+        },
+        error: () => {
+          this.publishError = 'Could not save the page. Please sign in and try again.';
+        }
+      });
+      return;
+    }
+
+    this.pagesService.create({ workspaceId: this.activeWorkspaceId, title }).pipe(
+      switchMap(page => this.blocksService.create(page.id, {
+        pageId: page.id,
+        type: 'paragraph',
+        content,
+        sortOrder: 0
+      })),
+      finalize(() => {
+        this.isPublishing = false;
+      })
+    ).subscribe({
+      next: () => {
+        localStorage.removeItem(this.draftKey);
+        this.publishMessage = 'Page published successfully.';
+        this.lastSavedLabel = 'Published to workspace';
+        this.router.navigate(['/all-pages']);
+      },
+      error: () => {
+        this.publishError = 'Could not publish the page. Please sign in and try again.';
+      }
+    });
+  }
+
+  private loadExistingPage(pageId: number): void {
+    forkJoin([
+      this.pagesService.get(pageId),
+      this.blocksService.listByPage(pageId)
+    ]).subscribe({
+      next: ([page, blocks]) => {
+        this.title = page.title;
+        this.activeWorkspaceId = page.workspaceId;
+        this.loadWorkspaceName();
+        const primaryBlock = blocks.sort((a, b) => a.sortOrder - b.sortOrder)[0];
+        this.primaryBlockId = primaryBlock?.id ?? null;
+        this.contentHtml = primaryBlock?.content ?? '';
+        this.lastSavedLabel = 'Loaded from workspace';
+
+        if (this.editor) {
+          this.editor.nativeElement.innerHTML = this.contentHtml;
+        }
+      },
+      error: () => {
+        this.publishError = 'Could not load this page.';
+      }
+    });
+  }
+
+  private loadWorkspaceName(): void {
+    this.workspacesService.getAll().subscribe({
+      next: workspaces => {
+        this.workspaceName = workspaces.find(workspace => workspace.id === this.activeWorkspaceId)?.name ?? 'Workspace';
+      },
+      error: () => {
+        this.workspaceName = 'Workspace';
+      }
+    });
   }
 
   private restoreDraft(): void {
@@ -138,8 +274,7 @@ export class NewPageComponent implements OnInit, OnDestroy {
       this.contentHtml = draft.contentHtml;
       this.imageDataUrl = draft.imageDataUrl;
       this.lastSavedLabel = draft.updatedAt ? `Draft saved ${new Date(draft.updatedAt).toLocaleTimeString()}` : this.lastSavedLabel;
-      
-      // Update editor content if it exists
+
       if (this.editor) {
         this.editor.nativeElement.innerHTML = this.contentHtml;
       }
@@ -161,6 +296,8 @@ export class NewPageComponent implements OnInit, OnDestroy {
   }
 
   private readonly saveBeforeUnload = (): void => {
-    this.saveDraft();
+    if (!this.isEditMode) {
+      this.saveDraft();
+    }
   };
 }

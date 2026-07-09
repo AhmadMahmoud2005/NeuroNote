@@ -3,7 +3,8 @@
 
   <section class="search-page">
     <header class="search-header">
-      <form class="search-box" (ngSubmit)="submitSearch()">
+      <div class="search-header-top">
+        <form class="search-box" (ngSubmit)="submitSearch()">
         <span class="search-icon" aria-hidden="true"></span>
         <input
           #searchInput
@@ -15,6 +16,9 @@
         />
         <kbd>/</kbd>
       </form>
+
+      <app-workspace-topbar></app-workspace-topbar>
+      </div>
 
       <div class="recent-row">
         <span>Recent:</span>
@@ -39,7 +43,7 @@
         </div>
 
         <div class="notes-list">
-          <article *ngFor="let note of results.notes" class="note-result">
+          <article *ngFor="let note of results.notes" class="note-result" (click)="openNote(note)" role="button" tabindex="0" (keyup.enter)="openNote(note)">
             <div>
               <h3 [innerHTML]="highlight(note.title)"></h3>
               <p [innerHTML]="highlight(note.excerpt)"></p>
@@ -84,7 +88,7 @@
             <span class="count-pill">{{ pendingTasksCount }} pending</span>
           </div>
 
-          <article *ngFor="let task of results.tasks" class="task-row">
+          <article *ngFor="let task of results.tasks" class="task-row" (click)="openTask()" role="button" tabindex="0" (keyup.enter)="openTask()">
             <span class="task-dot" [class.done]="!task.isPending"></span>
             <div>
               <h3 [innerHTML]="highlight(task.title)"></h3>

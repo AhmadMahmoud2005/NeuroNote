@@ -1,0 +1,16 @@
+<div class="page">
+  <h2>Workspaces</h2>
+  <p *ngIf="loading">Loading...</p>
+  <p class="error" *ngIf="error">{{ error }}</p>
+
+  <div *ngIf="!loading && workspaces.length === 0">
+    <p>No workspaces yet. <a routerLink="/workspaces/new">Create one</a>.</p>
+  </div>
+
+  <ul class="workspace-list">
+    <li *ngFor="let w of workspaces">
+      <a [routerLink]="['/workspaces', w.id]">{{ w.name }}</a>
+      <p class="muted">{{ w.description }}</p>
+    </li>
+  </ul>
+</div>

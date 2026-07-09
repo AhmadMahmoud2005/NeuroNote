@@ -1,14 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject, Subscription, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs';
 import { SlideBarComponent } from '../slide-bar/slide-bar.component';
-import { SearchResults, SearchService } from '../services/search.service';
+import { WorkspaceTopbarComponent } from '../workspace-topbar/workspace-topbar.component';
+import { SearchNote, SearchResults, SearchService } from '../services/search.service';
 
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [CommonModule, FormsModule, SlideBarComponent],
+  imports: [CommonModule, FormsModule, SlideBarComponent, WorkspaceTopbarComponent],
   templateUrl: './search.component.html',
   styleUrl: './search.component.css'
 })
@@ -24,7 +26,10 @@ export class SearchComponent implements OnInit, OnDestroy {
   private readonly queryChanges = new Subject<string>();
   private querySubscription?: Subscription;
 
-  constructor(private readonly searchService: SearchService) {}
+  constructor(
+    private readonly searchService: SearchService,
+    private readonly router: Router
+  ) {}
 
   ngOnInit(): void {
     this.activeWorkspaceId = Number(localStorage.getItem('activeWorkspaceId')) || 1;
@@ -77,6 +82,14 @@ export class SearchComponent implements OnInit, OnDestroy {
     this.queryChanges.next(search);
   }
 
+  openNote(note: SearchNote): void {
+    this.router.navigate(['/pages', note.id]);
+  }
+
+  openTask(): void {
+    this.router.navigate(['/tasks']);
+  }
+
   highlight(value: string): string {
     const trimmedQuery = this.query.trim();
 
@@ -118,8 +131,6 @@ export class SearchComponent implements OnInit, OnDestroy {
       }
     }
 
-    const defaults = ['Project Q4', 'Meeting Notes', 'Design Specs'];
-    localStorage.setItem(this.recentKey, JSON.stringify(defaults));
-    return defaults;
+    return [];
   }
 }

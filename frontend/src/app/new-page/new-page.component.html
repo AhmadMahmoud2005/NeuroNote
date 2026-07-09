@@ -5,19 +5,15 @@
     <header class="page-topbar">
       <div class="save-state">{{ lastSavedLabel }}</div>
 
-      <div class="top-actions">
-        <button type="button" class="icon-button share" aria-label="Share page"></button>
-        <button type="button" class="icon-button bell" aria-label="Notifications"></button>
-        <button type="button" class="profile-button" aria-label="Profile">A</button>
-      </div>
+      <app-workspace-topbar></app-workspace-topbar>
     </header>
 
     <main class="editor-wrap">
       <nav class="breadcrumb" aria-label="Page location">
         <span class="folder-icon" aria-hidden="true"></span>
-        <span>Product Development</span>
+        <span>{{ workspaceName }}</span>
         <span aria-hidden="true">&gt;</span>
-        <strong>Drafts</strong>
+        <strong>{{ isEditMode ? title || 'Untitled' : 'Drafts' }}</strong>
       </nav>
 
       <input
@@ -65,6 +61,12 @@
         <span aria-hidden="true">+</span>
         Click to add content
       </button>
+
+      <button type="button" class="add-content" (click)="publishPage()" [disabled]="isPublishing">
+        {{ isPublishing ? (isEditMode ? 'Saving...' : 'Publishing...') : (isEditMode ? 'Save page' : 'Publish page') }}
+      </button>
+      <p class="save-state" *ngIf="publishMessage">{{ publishMessage }}</p>
+      <p class="save-state" *ngIf="publishError">{{ publishError }}</p>
     </main>
   </section>
 </div>

@@ -112,9 +112,11 @@
       </div>
 
       <!-- Submit -->
-      <button type="submit" class="btn-submit" [class.btn-disabled]="registerForm.invalid">
-        Join the workspace
+      <button type="submit" class="btn-submit" [class.btn-disabled]="registerForm.invalid || isSubmitting">
+        {{ isSubmitting ? 'Creating account...' : 'Join the workspace' }}
       </button>
+
+      <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
 
       <!-- Switch to Login -->
       <p class="auth-switch">

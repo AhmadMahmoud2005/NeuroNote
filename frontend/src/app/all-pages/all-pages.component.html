@@ -4,53 +4,25 @@
   <section class="page-content">
     <header class="topbar">
       <div>
-        
-        <h1>Hello, Alex.</h1>
+        <h1>Hello, {{ displayName }}.</h1>
       </div>
 
-      <div class="topbar-actions">
-        <div class="notification-area">
-          <button
-            type="button"
-            class="icon-button bell-button"
-            aria-label="Open notifications"
-            (click)="toggleNotifications()"
-          >
-            <span class="bell-icon" aria-hidden="true"></span>
-            <span *ngIf="pendingNotifications.length" class="notification-badge"></span>
-          </button>
-
-          <div *ngIf="isNotificationsOpen" class="notifications-menu">
-            <div class="menu-heading">Notifications</div>
-
-            <div *ngIf="pendingNotifications.length; else emptyNotifications" class="notification-list">
-              <div *ngFor="let notification of pendingNotifications" class="notification-item">
-                <p>{{ notification.message }}</p>
-                <button type="button" (click)="acceptNotification(notification)">Accept</button>
-              </div>
-            </div>
-
-            <ng-template #emptyNotifications>
-              <p class="empty-state">No new notifications</p>
-            </ng-template>
-          </div>
-        </div>
-
-        <button type="button" class="avatar-button" aria-label="Open profile menu">
-          <span>AL</span>
-        </button>
-      </div>
+      <app-workspace-topbar></app-workspace-topbar>
     </header>
 
     <main class="dashboard-grid">
       <section class="notes-section">
         <div class="section-header">
-          <h2>Recent Notes</h2>
-          <a href="#" (click)="$event.preventDefault()">View All</a>
+          <h2>{{ showAllPages ? 'All Pages' : 'Recent Notes' }}</h2>
+          <button type="button" class="view-all-btn" (click)="toggleViewAll()">
+            {{ showAllPages ? 'Show Recent' : 'View All' }}
+          </button>
         </div>
 
-        <div class="notes-grid">
-          <article *ngFor="let note of recentNotes" class="note-card">
+        <p *ngIf="isLoadingPages" class="empty-notes">Loading pages...</p>
+
+        <div *ngIf="!isLoadingPages && recentNotes.length; else emptyNotes" class="notes-grid">
+          <article *ngFor="let note of recentNotes" class="note-card" (click)="openPage(note.id)" role="button" tabindex="0" (keyup.enter)="openPage(note.id)">
             <div class="note-card-top">
               <span class="tag">{{ note.label }}</span>
               <span class="open-icon" aria-hidden="true"></span>
@@ -60,20 +32,39 @@
             <span class="edited">{{ note.edited }}</span>
           </article>
         </div>
+
+        <ng-template #emptyNotes>
+          <div class="empty-notes" *ngIf="!isLoadingPages">
+            <p>No pages yet.</p>
+            <a routerLink="/new-page">Create your first page</a>
+          </div>
+        </ng-template>
       </section>
 
       <aside class="invite-panel">
         <h2>Invite Members</h2>
-        <p>Collaborate with your team. Invite members to this workspace.</p>
+        <p>Collaborate with your team. Invite members to {{ activeWorkspace?.name || 'this workspace' }}.</p>
 
         <label class="sr-only" for="member-email">Email address</label>
-        <input id="member-email" type="email" placeholder="email address..." />
-        <button type="button">Send Invite</button>
+        <input
+          id="member-email"
+          type="email"
+          placeholder="email address..."
+          [(ngModel)]="inviteEmail"
+          [disabled]="isInviting"
+          (keyup.enter)="sendInvite()"
+        />
+        <button type="button" [disabled]="isInviting" (click)="sendInvite()">
+          {{ isInviting ? 'Sending...' : 'Send Invite' }}
+        </button>
 
-        <a href="#" class="copy-link" (click)="$event.preventDefault()">
+        <div *ngIf="inviteStatusMessage" class="status-msg success">{{ inviteStatusMessage }}</div>
+        <div *ngIf="inviteErrorMessage" class="status-msg error">{{ inviteErrorMessage }}</div>
+
+        <button type="button" class="copy-link" (click)="copyInviteLink()">
           <span class="link-icon" aria-hidden="true"></span>
           Copy Invite Link
-        </a>
+        </button>
       </aside>
     </main>
   </section>

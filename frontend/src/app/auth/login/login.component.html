@@ -77,9 +77,11 @@
       </div>
 
       <!-- Submit -->
-      <button type="submit" class="btn-submit" [class.btn-disabled]="loginForm.invalid">
-        Sign in
+      <button type="submit" class="btn-submit" [class.btn-disabled]="loginForm.invalid || isSubmitting">
+        {{ isSubmitting ? 'Signing in...' : 'Sign in' }}
       </button>
+
+      <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
 
       <!-- Switch to Register -->
       <p class="auth-switch">

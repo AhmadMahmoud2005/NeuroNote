@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, of, tap } from 'rxjs';
+import { Observable, catchError, map, of, tap } from 'rxjs';
+import { ApiResponse, unwrapApiResponse } from './api-response';
 
 export interface UserProfile {
   id: number;
@@ -18,20 +19,22 @@ export interface UpdateProfileRequest {
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
-  private readonly apiUrl = 'https://localhost:5001/api/v1';
+  private readonly apiUrl = 'http://localhost:5000/api/v1';
   private readonly profileKey = 'settingsProfile';
 
   constructor(private readonly http: HttpClient) {}
 
   getProfile(userId: number): Observable<UserProfile> {
-    return this.http.get<UserProfile>(`${this.apiUrl}/users/${userId}/profile`).pipe(
+    return this.http.get<ApiResponse<UserProfile>>(`${this.apiUrl}/users/${userId}/profile`).pipe(
+      map(unwrapApiResponse),
       tap(profile => this.saveLocalProfile(profile)),
       catchError(() => of(this.getLocalProfile(userId)))
     );
   }
 
   updateProfile(userId: number, request: UpdateProfileRequest): Observable<UserProfile> {
-    return this.http.put<UserProfile>(`${this.apiUrl}/users/${userId}/profile`, request).pipe(
+    return this.http.put<ApiResponse<UserProfile>>(`${this.apiUrl}/users/${userId}/profile`, request).pipe(
+      map(unwrapApiResponse),
       tap(profile => this.saveLocalProfile(profile)),
       catchError(() => {
         const profile = { ...this.getLocalProfile(userId), ...request };
@@ -45,7 +48,8 @@ export class SettingsService {
     const formData = new FormData();
     formData.append('avatar', file);
 
-    return this.http.post<UserProfile>(`${this.apiUrl}/users/${userId}/avatar`, formData).pipe(
+    return this.http.post<ApiResponse<UserProfile>>(`${this.apiUrl}/users/${userId}/avatar`, formData).pipe(
+      map(unwrapApiResponse),
       tap(profile => this.saveLocalProfile(profile)),
       catchError(() => this.readAvatarLocally(userId, file))
     );
@@ -78,11 +82,28 @@ export class SettingsService {
       }
     }
 
+    // If an auth session exists, use that user's name/email as sensible defaults.
+    try {
+      const authUserRaw = localStorage.getItem('authUser');
+      if (authUserRaw) {
+        const parsed = JSON.parse(authUserRaw);
+        return {
+          id: parsed.id ?? parsed.Id ?? userId,
+          fullName: parsed.fullName ?? parsed.FullName ?? 'Your name',
+          email: parsed.email ?? parsed.Email ?? '',
+          bio: '',
+          avatarUrl: ''
+        };
+      }
+    } catch {
+      // fall through to defaults
+    }
+
     return {
       id: userId,
-      fullName: 'Alex Rivera',
-      email: 'alex.rivera@example.com',
-      bio: 'Focused on deep work and cognitive optimization.',
+      fullName: 'Your name',
+      email: '',
+      bio: '',
       avatarUrl: ''
     };
   }

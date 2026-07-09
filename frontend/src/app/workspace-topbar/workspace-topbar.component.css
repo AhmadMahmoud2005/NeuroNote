@@ -1,0 +1,233 @@
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.notification-area,
+.profile-area {
+  position: relative;
+}
+
+.icon-button,
+.avatar-button {
+  width: 2.6rem;
+  height: 2.6rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  color: var(--color-neutral);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transition: var(--transition-smooth);
+  border: none;
+  cursor: pointer;
+}
+
+.icon-button:hover,
+.avatar-button:hover {
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.bell-button {
+  position: relative;
+}
+
+.bell-icon {
+  width: 1rem;
+  height: 1.15rem;
+  position: relative;
+  display: block;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 0.65rem 0.65rem 0.25rem 0.25rem;
+}
+
+.bell-icon::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -0.34rem;
+  width: 0.5rem;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.bell-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -0.32rem;
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.notification-badge {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.55rem;
+  width: 0.52rem;
+  height: 0.52rem;
+  border: 2px solid var(--color-secondary);
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+.notifications-menu,
+.profile-menu {
+  position: absolute;
+  top: calc(100% + 0.85rem);
+  right: 0;
+  z-index: 20;
+  width: min(22rem, calc(100vw - 2rem));
+  border: 1px solid rgba(100, 116, 139, 0.18);
+  border-radius: 0.65rem;
+  background: var(--color-white);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.14);
+  padding: 0.8rem;
+}
+
+.menu-heading {
+  color: var(--color-neutral);
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 0.25rem 0.35rem 0.65rem;
+}
+
+.notification-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.notification-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  border-radius: 0.5rem;
+  background: var(--color-secondary);
+  padding: 0.8rem;
+}
+
+.notification-item p,
+.empty-state {
+  color: var(--color-ternary);
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.empty-state {
+  padding: 0.8rem 0.35rem;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  grid-column: 1 / -1;
+}
+
+.notification-actions button {
+  flex: 1;
+  border-radius: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.4rem;
+  cursor: pointer;
+}
+
+.notification-actions .accept-btn {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+}
+
+.notification-actions .decline-btn {
+  background: transparent;
+  color: var(--color-ternary);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.avatar-button {
+  overflow: hidden;
+  background: var(--color-neutral);
+  color: var(--color-white);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.avatar-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-menu {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.5rem;
+}
+
+.profile-menu-header {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.45rem 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.12);
+  margin-bottom: 0.25rem;
+}
+
+.profile-menu-header strong {
+  color: var(--color-neutral);
+  font-size: 0.92rem;
+}
+
+.profile-menu-header span {
+  color: var(--color-ternary);
+  font-size: 0.78rem;
+}
+
+.profile-menu a,
+.logout-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-radius: 0.45rem;
+  color: var(--color-neutral);
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 0.65rem 0.55rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.profile-menu a:hover,
+.logout-btn:hover {
+  background: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+.logout-btn {
+  margin-top: 0.25rem;
+  border-top: 1px solid rgba(100, 116, 139, 0.12);
+  color: #ef4444;
+}
+
+body.dark-theme .icon-button,
+body.dark-theme .avatar-button {
+  background: var(--color-secondary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-theme .notifications-menu,
+body.dark-theme .profile-menu {
+  background: var(--color-white);
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}

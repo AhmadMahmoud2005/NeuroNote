@@ -1,0 +1,51 @@
+<div class="topbar-actions">
+  <div class="notification-area">
+    <button
+      type="button"
+      class="icon-button bell-button"
+      aria-label="Open notifications"
+      (click)="toggleNotifications()"
+    >
+      <span class="bell-icon" aria-hidden="true"></span>
+      <span *ngIf="pendingNotifications.length" class="notification-badge"></span>
+    </button>
+
+    <div *ngIf="isNotificationsOpen" class="notifications-menu">
+      <div class="menu-heading">Notifications</div>
+
+      <div *ngIf="pendingNotifications.length; else emptyNotifications" class="notification-list">
+        <div *ngFor="let notification of pendingNotifications" class="notification-item">
+          <p>{{ notification.message }}</p>
+          <div class="notification-actions">
+            <button type="button" class="accept-btn" (click)="acceptNotification(notification)">Accept</button>
+            <button type="button" class="decline-btn" (click)="declineNotification(notification)">Decline</button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #emptyNotifications>
+        <p class="empty-state">No new notifications</p>
+      </ng-template>
+    </div>
+  </div>
+
+  <div class="profile-area">
+    <button type="button" class="avatar-button" aria-label="Open profile menu" (click)="toggleProfile()">
+      <img *ngIf="profile?.avatarUrl; else initialsFallback" [src]="profile!.avatarUrl" alt="" />
+      <ng-template #initialsFallback>
+        <span>{{ initials }}</span>
+      </ng-template>
+    </button>
+
+    <div *ngIf="isProfileOpen" class="profile-menu">
+      <div class="profile-menu-header">
+        <strong>{{ displayName }}</strong>
+        <span>{{ profile?.email }}</span>
+      </div>
+      <a routerLink="/settings" (click)="isProfileOpen = false">Profile &amp; Settings</a>
+      <a routerLink="/settings" fragment="appearance" (click)="isProfileOpen = false">Appearance</a>
+      <a routerLink="/workspaces">Workspaces</a>
+      <button type="button" class="logout-btn" (click)="logout()">Log out</button>
+    </div>
+  </div>
+</div>

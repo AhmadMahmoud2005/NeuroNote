@@ -108,16 +108,23 @@ h1 {
   gap: 0.35rem;
 }
 
-.settings-nav a {
+.settings-nav a,
+.settings-nav button {
   border-radius: 0.45rem;
   color: var(--color-ternary);
   font-size: 0.95rem;
   font-weight: 750;
   padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
 }
 
 .settings-nav a:hover,
-.settings-nav a.active {
+.settings-nav a.active,
+.settings-nav button:hover,
+.settings-nav button.active {
   background: rgba(59, 130, 246, 0.1);
   color: var(--color-primary);
 }
