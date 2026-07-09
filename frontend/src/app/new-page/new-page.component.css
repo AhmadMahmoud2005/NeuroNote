@@ -1,0 +1,321 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--color-white);
+}
+
+.workspace-shell {
+  display: flex;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 82% 10%, rgba(59, 130, 246, 0.05), transparent 17rem),
+    var(--color-white);
+}
+
+.editor-page {
+  flex: 1;
+  min-width: 0;
+  padding: 1.25rem 3rem 4rem;
+}
+
+.page-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3rem;
+}
+
+.save-state {
+  color: var(--color-ternary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.icon-button,
+.profile-button {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-neutral);
+  transition: var(--transition-smooth);
+}
+
+.icon-button:hover,
+.profile-button:hover {
+  background: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+.icon-button {
+  position: relative;
+}
+
+.share::before {
+  content: "";
+  width: 0.72rem;
+  height: 0.72rem;
+  border: 2px solid currentColor;
+  border-top: 0;
+  border-radius: 0.12rem;
+}
+
+.share::after {
+  content: "";
+  position: absolute;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: translateY(-0.28rem) rotate(-45deg);
+}
+
+.bell::before {
+  content: "";
+  width: 0.9rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 0.65rem 0.65rem 0.2rem 0.2rem;
+}
+
+.bell::after {
+  content: "";
+  position: absolute;
+  bottom: 0.48rem;
+  width: 0.55rem;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.profile-button {
+  border: 2px solid currentColor;
+  font-weight: 850;
+}
+
+.editor-wrap {
+  width: min(100%, 780px);
+  margin: 3.2rem auto 0;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-ternary);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+}
+
+.breadcrumb strong {
+  color: var(--color-primary);
+}
+
+.folder-icon {
+  width: 0.9rem;
+  height: 0.65rem;
+  position: relative;
+  border: 1.8px solid currentColor;
+  border-radius: 0.12rem;
+}
+
+.folder-icon::before {
+  content: "";
+  position: absolute;
+  top: -0.28rem;
+  left: -0.08rem;
+  width: 0.48rem;
+  height: 0.25rem;
+  border: 1.8px solid currentColor;
+  border-bottom: 0;
+  border-radius: 0.12rem 0.12rem 0 0;
+}
+
+.title-input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--color-neutral);
+  font: inherit;
+  font-size: clamp(2.45rem, 5vw, 3.25rem);
+  font-weight: 850;
+  line-height: 1.1;
+  outline: none;
+}
+
+.title-input::placeholder {
+  color: rgba(100, 116, 139, 0.42);
+}
+
+.toolbar {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 0.22rem;
+  border: 1px solid rgba(100, 116, 139, 0.18);
+  border-radius: 999px;
+  background: var(--color-white);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  margin: 3.6rem auto 2.2rem;
+  padding: 0.45rem;
+}
+
+.toolbar button {
+  min-width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--color-neutral);
+  font-weight: 850;
+  transition: var(--transition-smooth);
+}
+
+.toolbar button:hover {
+  background: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+.style-select {
+  min-width: 5.2rem !important;
+  padding: 0 0.8rem;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.underline {
+  text-decoration: underline;
+}
+
+.link::before,
+.image::before {
+  content: "";
+  width: 0.9rem;
+  height: 0.55rem;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+}
+
+.image::before {
+  height: 0.75rem;
+  border-radius: 0.15rem;
+}
+
+.clear-button {
+  min-width: 3.8rem !important;
+  color: var(--color-ternary) !important;
+  font-size: 0.78rem;
+}
+
+.hidden-input {
+  display: none;
+}
+
+.image-block {
+  position: relative;
+  border-radius: 0.75rem;
+  margin-bottom: 1.6rem;
+  overflow: hidden;
+}
+
+.image-block img {
+  width: 100%;
+  max-height: 360px;
+  display: block;
+  object-fit: cover;
+}
+
+.image-block button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  border-radius: 999px;
+  background: var(--color-white);
+  color: var(--color-neutral);
+  font-size: 0.78rem;
+  font-weight: 850;
+  padding: 0.55rem 0.8rem;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
+}
+
+.content-editor {
+  min-height: 14rem;
+  color: var(--color-neutral);
+  font-size: 1.2rem;
+  line-height: 1.55;
+  outline: none;
+  direction: ltr; /* Ensure left-to-right text input */
+}
+
+.content-editor h2 {
+  color: var(--color-neutral);
+  font-size: 1.25rem;
+  font-weight: 850;
+  margin: 0 0 0.65rem;
+}
+
+.content-editor p {
+  color: rgba(15, 23, 42, 0.72);
+  margin-bottom: 0.75rem;
+}
+
+.content-editor:empty::before {
+  content: "Start writing...";
+  color: rgba(100, 116, 139, 0.48);
+}
+
+.add-content {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  color: rgba(100, 116, 139, 0.48);
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 2rem;
+}
+
+.add-content span {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.14);
+  color: var(--color-neutral);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+@media (max-width: 860px) {
+  .workspace-shell {
+    flex-direction: column;
+  }
+
+  .editor-page {
+    padding: 1rem 1.4rem 3rem;
+  }
+
+  .editor-wrap {
+    margin-top: 2rem;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 0.75rem;
+  }
+}

@@ -19,4 +19,8 @@ export class AppComponent {
   get isAuthPage(): boolean {
     return this.router.url === '/login' || this.router.url === '/register';
   }
+
+  get showSiteChrome(): boolean {
+    return !this.isAuthPage && !['/all-pages', '/tasks', '/new-page', '/search', '/settings'].includes(this.router.url);
+  }
 }

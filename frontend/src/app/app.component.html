@@ -1,5 +1,5 @@
-<app-nav *ngIf="!isAuthPage"></app-nav>
+<app-nav *ngIf="showSiteChrome"></app-nav>
 <main class="main-content">
   <router-outlet></router-outlet>
 </main>
-<app-footer *ngIf="!isAuthPage"></app-footer>
+<app-footer *ngIf="showSiteChrome"></app-footer>

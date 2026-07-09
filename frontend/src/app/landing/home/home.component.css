@@ -244,6 +244,49 @@
   transform: translateY(0);
 }
 
+/* Dark theme overrides */
+body.dark-theme .hero-section,
+body.dark-theme .features-section {
+  background-color: var(--color-white);
+}
+
+body.dark-theme .badge {
+  background-color: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+body.dark-theme .features-section {
+  border-top-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-theme .feature-card {
+  background-color: var(--color-secondary);
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+body.dark-theme .feature-card:hover {
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+body.dark-theme .icon-container {
+  background-color: var(--color-white);
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+body.dark-theme .btn-secondary {
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+body.dark-theme .btn-secondary:hover {
+  background-color: rgba(59, 130, 246, 0.25);
+}
+
+body.dark-theme .btn-cta:hover {
+  background-color: var(--color-secondary);
+}
+
 /* Keyframes animations */
 @keyframes fadeInUp {
   from {

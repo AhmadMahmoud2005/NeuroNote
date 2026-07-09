@@ -1,0 +1,121 @@
+<div class="workspace-shell">
+  <app-slide-bar></app-slide-bar>
+
+  <section class="settings-page">
+    <header class="settings-topbar">
+      <div></div>
+      <div class="top-icons">
+        <button type="button" class="bell-icon" aria-label="Notifications"></button>
+        <button type="button" class="profile-icon" aria-label="Profile">A</button>
+      </div>
+    </header>
+
+    <main class="settings-layout">
+      <aside class="settings-nav">
+        <h1>Settings</h1>
+        <p>Manage your account settings and preferences.</p>
+
+        <nav aria-label="Settings sections">
+          <a href="#profile" class="active">Profile</a>
+          <a href="#appearance">Appearance</a>
+        </nav>
+      </aside>
+
+      <section class="settings-content">
+        <form id="profile" class="settings-card" (ngSubmit)="saveProfile()">
+          <h2>Profile Information</h2>
+
+          <div class="avatar-row">
+            <div class="avatar-preview">
+              <img *ngIf="profile.avatarUrl; else avatarFallback" [src]="profile.avatarUrl" alt="Profile avatar" />
+              <ng-template #avatarFallback>
+                <span>{{ profile.fullName.charAt(0) || 'A' }}</span>
+              </ng-template>
+            </div>
+
+            <div>
+              <button type="button" class="soft-button" (click)="openAvatarPicker()">Change Avatar</button>
+              <p>JPG, GIF or PNG. 1MB max.</p>
+              <input
+                #avatarInput
+                class="hidden-input"
+                type="file"
+                accept="image/png,image/jpeg,image/gif"
+                (change)="updateAvatar($event)"
+              />
+            </div>
+          </div>
+
+          <label for="full-name">Full Name</label>
+          <input
+            id="full-name"
+            name="fullName"
+            type="text"
+            [(ngModel)]="profile.fullName"
+          />
+
+          <label for="email">Email Address</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            [(ngModel)]="profile.email"
+          />
+
+          <label for="bio">Bio</label>
+          <textarea
+            id="bio"
+            name="bio"
+            rows="4"
+            [(ngModel)]="profile.bio"
+          ></textarea>
+
+          <div class="card-actions">
+            <span>{{ statusMessage }}</span>
+            <button type="submit" [disabled]="isSaving">
+              {{ isSaving ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </form>
+
+        <section id="appearance" class="settings-card appearance-card">
+          <h2>Appearance</h2>
+
+          <div class="setting-row">
+            <div>
+              <h3>Dark Mode</h3>
+              <p>Switch between light and dark themes.</p>
+            </div>
+
+            <button
+              type="button"
+              class="toggle"
+              [class.on]="isDarkMode"
+              aria-label="Toggle dark mode"
+              (click)="toggleDarkMode()"
+            >
+              <span></span>
+            </button>
+          </div>
+
+          <div class="setting-row">
+            <div>
+              <h3>Compact Layout</h3>
+              <p>Reduce spacing to fit more content on screen.</p>
+            </div>
+
+            <button
+              type="button"
+              class="toggle"
+              [class.on]="isCompactLayout"
+              aria-label="Toggle compact layout"
+              (click)="toggleCompactLayout()"
+            >
+              <span></span>
+            </button>
+          </div>
+        </section>
+      </section>
+    </main>
+  </section>
+</div>

@@ -1,0 +1,80 @@
+<div class="workspace-shell">
+  <app-slide-bar></app-slide-bar>
+
+  <section class="page-content">
+    <header class="topbar">
+      <div>
+        
+        <h1>Hello, Alex.</h1>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="notification-area">
+          <button
+            type="button"
+            class="icon-button bell-button"
+            aria-label="Open notifications"
+            (click)="toggleNotifications()"
+          >
+            <span class="bell-icon" aria-hidden="true"></span>
+            <span *ngIf="pendingNotifications.length" class="notification-badge"></span>
+          </button>
+
+          <div *ngIf="isNotificationsOpen" class="notifications-menu">
+            <div class="menu-heading">Notifications</div>
+
+            <div *ngIf="pendingNotifications.length; else emptyNotifications" class="notification-list">
+              <div *ngFor="let notification of pendingNotifications" class="notification-item">
+                <p>{{ notification.message }}</p>
+                <button type="button" (click)="acceptNotification(notification)">Accept</button>
+              </div>
+            </div>
+
+            <ng-template #emptyNotifications>
+              <p class="empty-state">No new notifications</p>
+            </ng-template>
+          </div>
+        </div>
+
+        <button type="button" class="avatar-button" aria-label="Open profile menu">
+          <span>AL</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="dashboard-grid">
+      <section class="notes-section">
+        <div class="section-header">
+          <h2>Recent Notes</h2>
+          <a href="#" (click)="$event.preventDefault()">View All</a>
+        </div>
+
+        <div class="notes-grid">
+          <article *ngFor="let note of recentNotes" class="note-card">
+            <div class="note-card-top">
+              <span class="tag">{{ note.label }}</span>
+              <span class="open-icon" aria-hidden="true"></span>
+            </div>
+            <h3>{{ note.title }}</h3>
+            <p>{{ note.description }}</p>
+            <span class="edited">{{ note.edited }}</span>
+          </article>
+        </div>
+      </section>
+
+      <aside class="invite-panel">
+        <h2>Invite Members</h2>
+        <p>Collaborate with your team. Invite members to this workspace.</p>
+
+        <label class="sr-only" for="member-email">Email address</label>
+        <input id="member-email" type="email" placeholder="email address..." />
+        <button type="button">Send Invite</button>
+
+        <a href="#" class="copy-link" (click)="$event.preventDefault()">
+          <span class="link-icon" aria-hidden="true"></span>
+          Copy Invite Link
+        </a>
+      </aside>
+    </main>
+  </section>
+</div>

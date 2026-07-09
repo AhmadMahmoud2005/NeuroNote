@@ -1,0 +1,92 @@
+<div class="workspace-shell">
+  <app-slide-bar></app-slide-bar>
+
+  <section class="tasks-content">
+    <header class="tasks-header">
+      <div>
+        <p class="eyebrow">Workspace Tasks</p>
+        <h1>Tasks</h1>
+      </div>
+
+      <div class="task-count">
+        <strong>{{ openTasksCount }}</strong>
+        <span>Open</span>
+      </div>
+    </header>
+
+    <main class="tasks-grid">
+      <section class="create-panel">
+        <h2>Create Task</h2>
+
+        <form (ngSubmit)="createTask()" #taskForm="ngForm">
+          <label for="task-title">Task name</label>
+          <input
+            id="task-title"
+            name="title"
+            type="text"
+            placeholder="Write a task..."
+            [(ngModel)]="newTask.title"
+            required
+          />
+
+          <div class="form-row">
+            <div>
+              <label for="priority">Priority</label>
+              <select id="priority" name="priority" [(ngModel)]="newTask.priority">
+                <option *ngFor="let priority of priorities" [ngValue]="priority">
+                  {{ priority }}
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label for="due-date">Due date</label>
+              <input id="due-date" name="dueDate" type="date" [(ngModel)]="newTask.dueDate" />
+            </div>
+          </div>
+
+          <button type="submit" [disabled]="taskForm.invalid">Create Task</button>
+        </form>
+      </section>
+
+      <section class="task-list-panel">
+        <div class="section-title">
+          <h2>Today</h2>
+          <span>{{ workspaceTasks.length }} tasks</span>
+        </div>
+
+        <div *ngIf="workspaceTasks.length; else emptyTasks" class="task-list">
+          <article
+            *ngFor="let task of workspaceTasks"
+            class="task-item"
+            [class.completed]="task.isCompleted"
+          >
+            <button
+              type="button"
+              class="check-button"
+              [class.checked]="task.isCompleted"
+              aria-label="Toggle task"
+              (click)="toggleTask(task.id)"
+            ></button>
+
+            <div class="task-main">
+              <h3>{{ task.title }}</h3>
+              <p *ngIf="task.dueDate">Due {{ task.dueDate }}</p>
+            </div>
+
+            <span class="priority" [ngClass]="task.priority.toLowerCase()">
+              {{ task.priority }}
+            </span>
+          </article>
+        </div>
+
+        <ng-template #emptyTasks>
+          <div class="empty-state">
+            <h3>No tasks yet</h3>
+            <p>Create your first task for this workspace.</p>
+          </div>
+        </ng-template>
+      </section>
+    </main>
+  </section>
+</div>

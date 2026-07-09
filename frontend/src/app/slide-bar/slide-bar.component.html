@@ -1,0 +1,34 @@
+<aside class="sidebar">
+  <div class="brand">
+    <a class="brand-name" routerLink="/all-pages">NeuroNote</a>
+
+    <label class="workspace-label" for="workspace-switcher">Workspace</label>
+    <select
+      id="workspace-switcher"
+      class="workspace-select"
+      [ngModel]="activeWorkspaceId"
+      (ngModelChange)="changeWorkspace($event)"
+    >
+      <option *ngFor="let workspace of workspaces" [ngValue]="workspace.id">
+        {{ workspace.name }}
+      </option>
+    </select>
+  </div>
+
+  <nav class="sidebar-nav" aria-label="Workspace navigation">
+    <a
+      *ngFor="let item of navItems"
+      class="nav-item"
+      [class.active]="isActive(item.route)"
+      [routerLink]="item.route"
+    >
+      <span class="nav-icon" [ngClass]="item.icon" aria-hidden="true"></span>
+      <span>{{ item.label }}</span>
+    </a>
+  </nav>
+
+  <a class="settings-link" routerLink="/settings">
+    <span class="nav-icon settings" aria-hidden="true"></span>
+    <span>Settings</span>
+  </a>
+</aside>

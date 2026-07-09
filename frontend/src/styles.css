@@ -8,6 +8,59 @@
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Dark theme overrides — toggled via body.dark-theme (see SettingsComponent) */
+body.dark-theme {
+  --color-secondary: #1E293B;
+  --color-ternary: #94A3B8;
+  --color-neutral: #F1F5F9;
+  --color-white: #0F172A;
+  background-color: var(--color-white);
+  color: var(--color-neutral);
+}
+
+/* Card / surface adjustments for dark mode */
+body.dark-theme .settings-card {
+  background: rgba(30, 41, 59, 0.92);
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+}
+
+body.dark-theme input,
+body.dark-theme textarea {
+  background: #0F172A;
+  border-color: rgba(148, 163, 184, 0.3);
+  color: var(--color-neutral);
+}
+
+body.dark-theme .card-actions,
+body.dark-theme .setting-row {
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+/* Sidebar dark theme */
+body.dark-theme .sidebar {
+  background: linear-gradient(180deg, var(--color-secondary) 0%, var(--color-white) 100%);
+  border-right-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-theme .workspace-select {
+  background: var(--color-white);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: var(--color-neutral);
+}
+
+/* Workspace shell dark theme */
+body.dark-theme .workspace-shell {
+  background:
+    radial-gradient(circle at 92% 88%, rgba(59, 130, 246, 0.08), transparent 16rem),
+    var(--color-white);
+}
+
+/* All pages dark theme */
+body.dark-theme .page-content {
+  background: var(--color-white);
+}
+
 /* Reset and base styles */
 * {
   margin: 0;

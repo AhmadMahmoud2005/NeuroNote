@@ -1,0 +1,107 @@
+<div class="workspace-shell">
+  <app-slide-bar></app-slide-bar>
+
+  <section class="search-page">
+    <header class="search-header">
+      <form class="search-box" (ngSubmit)="submitSearch()">
+        <span class="search-icon" aria-hidden="true"></span>
+        <input
+          #searchInput
+          type="search"
+          name="query"
+          placeholder="Search for notes, tasks, or files..."
+          [ngModel]="query"
+          (ngModelChange)="onQueryChange($event)"
+        />
+        <kbd>/</kbd>
+      </form>
+
+      <div class="recent-row">
+        <span>Recent:</span>
+        <button
+          *ngFor="let search of recentSearches"
+          type="button"
+          (click)="useRecentSearch(search)"
+        >
+          {{ search }}
+        </button>
+      </div>
+    </header>
+
+    <main class="results-layout">
+      <section class="primary-results">
+        <div class="section-heading">
+          <div>
+            <span class="section-icon note-icon" aria-hidden="true"></span>
+            <h2>Notes</h2>
+          </div>
+          <span class="count-pill">{{ results.notes.length }} results</span>
+        </div>
+
+        <div class="notes-list">
+          <article *ngFor="let note of results.notes" class="note-result">
+            <div>
+              <h3 [innerHTML]="highlight(note.title)"></h3>
+              <p [innerHTML]="highlight(note.excerpt)"></p>
+            </div>
+            <span>{{ note.updatedAt }}</span>
+            <div class="tags">
+              <small *ngFor="let tag of note.tags" [innerHTML]="highlight(tag)"></small>
+            </div>
+          </article>
+
+          <p *ngIf="!isLoading && !results.notes.length" class="empty-line">No matching notes.</p>
+        </div>
+
+        <div class="section-heading files-heading">
+          <div>
+            <span class="section-icon file-icon" aria-hidden="true"></span>
+            <h2>Files</h2>
+          </div>
+          <span class="count-pill">{{ results.files.length }} results</span>
+        </div>
+
+        <div class="files-grid">
+          <article *ngFor="let file of results.files" class="file-card">
+            <span class="file-type" [ngClass]="file.type" aria-hidden="true"></span>
+            <div>
+              <h3 [innerHTML]="highlight(file.name)"></h3>
+              <p>{{ file.meta }}</p>
+            </div>
+          </article>
+
+          <p *ngIf="!isLoading && !results.files.length" class="empty-line">No matching files.</p>
+        </div>
+      </section>
+
+      <aside class="side-results">
+        <section class="tasks-card">
+          <div class="section-heading compact">
+            <div>
+              <span class="section-icon task-icon" aria-hidden="true"></span>
+              <h2>Tasks</h2>
+            </div>
+            <span class="count-pill">{{ pendingTasksCount }} pending</span>
+          </div>
+
+          <article *ngFor="let task of results.tasks" class="task-row">
+            <span class="task-dot" [class.done]="!task.isPending"></span>
+            <div>
+              <h3 [innerHTML]="highlight(task.title)"></h3>
+              <p>{{ task.dueLabel }}</p>
+            </div>
+          </article>
+
+          <p *ngIf="!isLoading && !results.tasks.length" class="empty-line">No matching tasks.</p>
+        </section>
+
+        <section class="context-card">
+          <span class="context-icon" aria-hidden="true"></span>
+          <p>Showing results based on your workspace context.</p>
+        </section>
+      </aside>
+    </main>
+
+    <div *ngIf="isLoading" class="loading-bar"></div>
+  </section>
+</div>

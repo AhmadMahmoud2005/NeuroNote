@@ -1,0 +1,70 @@
+<div class="workspace-shell">
+  <app-slide-bar></app-slide-bar>
+
+  <section class="editor-page">
+    <header class="page-topbar">
+      <div class="save-state">{{ lastSavedLabel }}</div>
+
+      <div class="top-actions">
+        <button type="button" class="icon-button share" aria-label="Share page"></button>
+        <button type="button" class="icon-button bell" aria-label="Notifications"></button>
+        <button type="button" class="profile-button" aria-label="Profile">A</button>
+      </div>
+    </header>
+
+    <main class="editor-wrap">
+      <nav class="breadcrumb" aria-label="Page location">
+        <span class="folder-icon" aria-hidden="true"></span>
+        <span>Product Development</span>
+        <span aria-hidden="true">&gt;</span>
+        <strong>Drafts</strong>
+      </nav>
+
+      <input
+        class="title-input"
+        type="text"
+        aria-label="Page title"
+        placeholder="Untitled"
+        [(ngModel)]="title"
+        (ngModelChange)="scheduleSave()"
+      />
+
+      <div class="toolbar" aria-label="Editor toolbar">
+        <button type="button" class="style-select" (click)="setBlock('p')">Normal</button>
+        <button type="button" class="tool-button" (click)="format('bold')" aria-label="Bold">B</button>
+        <button type="button" class="tool-button italic" (click)="format('italic')" aria-label="Italic">I</button>
+        <button type="button" class="tool-button underline" (click)="format('underline')" aria-label="Underline">U</button>
+        <button type="button" class="tool-button link" (click)="format('createLink')" aria-label="Add link"></button>
+        <button type="button" class="tool-button image" (click)="openImagePicker()" aria-label="Add image"></button>
+        <button type="button" class="clear-button" (click)="clearPage()">Clear</button>
+      </div>
+
+      <input
+        #imageInput
+        class="hidden-input"
+        type="file"
+        accept="image/*"
+        (change)="addImage($event)"
+      />
+
+      <figure *ngIf="imageDataUrl" class="image-block">
+        <img [src]="imageDataUrl" alt="Page attachment" />
+        <button type="button" (click)="removeImage()">Remove image</button>
+      </figure>
+
+      <section
+        #editor
+        class="content-editor"
+        contenteditable="true"
+        [innerHTML]="contentHtml"
+        (input)="updateContent()"
+        aria-label="Page content"
+      ></section>
+
+      <button type="button" class="add-content" (click)="openImagePicker()">
+        <span aria-hidden="true">+</span>
+        Click to add content
+      </button>
+    </main>
+  </section>
+</div>
