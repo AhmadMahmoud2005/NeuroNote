@@ -48,14 +48,12 @@
         <button type="button" (click)="removeImage()">Remove image</button>
       </figure>
 
-      <section
-        #editor
-        class="content-editor"
-        contenteditable="true"
-        [innerHTML]="contentHtml"
-        (input)="updateContent()"
-        aria-label="Page content"
-      ></section>
+     <section
+  #editor
+  class="content-editor"
+  contenteditable="true"
+  (input)="updateContent()"
+></section>
 
       <button type="button" class="add-content" (click)="openImagePicker()">
         <span aria-hidden="true">+</span>
