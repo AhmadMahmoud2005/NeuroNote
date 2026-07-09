@@ -6,7 +6,7 @@
       <div></div>
       <div class="top-icons">
         <button type="button" class="bell-icon" aria-label="Notifications"></button>
-        <button type="button" class="profile-icon" aria-label="Profile">A</button>
+        <button type="button" class="profile-icon" aria-label="Profile">{{ getAvatarCharacter() }}</button>
       </div>
     </header>
 
@@ -29,7 +29,7 @@
             <div class="avatar-preview">
               <img *ngIf="profile.avatarUrl; else avatarFallback" [src]="profile.avatarUrl" alt="Profile avatar" />
               <ng-template #avatarFallback>
-                <span>{{ profile.fullName.charAt(0) || 'A' }}</span>
+                <span>{{ getAvatarCharacter() }}</span>
               </ng-template>
             </div>
 

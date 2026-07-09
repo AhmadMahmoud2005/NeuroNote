@@ -25,3 +25,7 @@ obj/
 # OS
 .DS_Store
 Thumbs.db
+
+# for AI angents
+AI/
+memory.md

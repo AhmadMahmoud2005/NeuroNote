@@ -8,6 +8,8 @@ import { TasksComponent } from './tasks/tasks.component';
 import { NewPageComponent } from './new-page/new-page.component';
 import { SearchComponent } from './search/search.component';
 import { SettingsComponent } from './settings/settings.component';
+import { authGuard } from './guards/auth.guard';
+import { pendingChangesGuard } from './guards/pending-changes.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
@@ -15,9 +17,9 @@ export const routes: Routes = [
   { path: 'about', component: AboutComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: SignUpComponent },
-  { path: 'all-pages', component: AllPagesComponent },
-  { path: 'tasks', component: TasksComponent },
-  { path: 'new-page', component: NewPageComponent },
-  { path: 'search', component: SearchComponent },
-  { path: 'settings', component: SettingsComponent }
+  { path: 'all-pages', component: AllPagesComponent, canActivate: [authGuard] },
+  { path: 'tasks', component: TasksComponent, canActivate: [authGuard] },
+  { path: 'new-page', component: NewPageComponent, canActivate: [authGuard], canDeactivate: [pendingChangesGuard] },
+  { path: 'search', component: SearchComponent, canActivate: [authGuard] },
+  { path: 'settings', component: SettingsComponent, canActivate: [authGuard] }
 ];

@@ -3,6 +3,7 @@ import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SlideBarComponent } from '../slide-bar/slide-bar.component';
 import { SettingsService, UserProfile } from '../services/settings.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-settings',
@@ -28,10 +29,16 @@ export class SettingsComponent implements OnInit {
     avatarUrl: ''
   };
 
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly authService: AuthService
+  ) {}
 
   ngOnInit(): void {
-    this.userId = Number(localStorage.getItem('userId')) || 1;
+    const user = this.authService.currentUser;
+    if (user) {
+      this.userId = user.userId;
+    }
     this.isDarkMode = localStorage.getItem('theme') === 'dark';
     this.isCompactLayout = localStorage.getItem('compactLayout') !== 'false';
     this.applyTheme();
@@ -49,11 +56,32 @@ export class SettingsComponent implements OnInit {
       fullName: this.profile.fullName,
       email: this.profile.email,
       bio: this.profile.bio
-    }).subscribe(profile => {
-      this.profile = profile;
-      this.isSaving = false;
-      this.statusMessage = 'Changes saved';
+    }).subscribe({
+      next: (profile) => {
+        this.profile = profile;
+        this.isSaving = false;
+        this.statusMessage = 'Changes saved';
+
+        // Update AuthService current user so the name changes globally in all views instantly
+        const user = this.authService.currentUser;
+        if (user) {
+          const updatedUser = { ...user, fullName: profile.fullName, email: profile.email };
+          localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+          // Trigger behavior subject updates
+          (this.authService as any).currentUserSubject.next(updatedUser);
+        }
+      },
+      error: () => {
+        this.isSaving = false;
+        this.statusMessage = 'Failed to save changes';
+      }
     });
+  }
+
+  getAvatarCharacter(): string {
+    if (!this.profile.fullName) return 'A';
+    const trimmed = this.profile.fullName.trim();
+    return trimmed.length > 0 ? trimmed.charAt(0).toUpperCase() : 'A';
   }
 
   openAvatarPicker(): void {

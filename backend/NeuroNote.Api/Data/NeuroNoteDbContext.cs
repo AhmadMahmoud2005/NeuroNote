@@ -25,9 +25,13 @@ public class NeuroNoteDbContext(DbContextOptions<NeuroNoteDbContext> options) : 
             entity.ToTable("Users");
             entity.HasKey(user => user.Id);
             entity.HasIndex(user => user.Email).IsUnique();
+            entity.HasIndex(user => user.Username).IsUnique();
             entity.Property(user => user.FullName).HasMaxLength(150).IsRequired();
+            entity.Property(user => user.Username).HasMaxLength(100).IsRequired();
             entity.Property(user => user.Email).HasMaxLength(200).IsRequired();
             entity.Property(user => user.PasswordHash).HasMaxLength(255).IsRequired();
+            entity.Property(user => user.Bio).HasMaxLength(500).HasDefaultValue(string.Empty);
+            entity.Property(user => user.AvatarUrl).HasMaxLength(1000).HasDefaultValue(string.Empty);
             entity.Property(user => user.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
             entity.Property(user => user.UpdatedAt);
         });
@@ -116,6 +120,8 @@ public class NeuroNoteDbContext(DbContextOptions<NeuroNoteDbContext> options) : 
             entity.HasIndex(page => new { page.WorkspaceId, page.Slug }).IsUnique();
             entity.Property(page => page.Title).HasMaxLength(250).IsRequired();
             entity.Property(page => page.Slug).HasMaxLength(250).IsRequired();
+            entity.Property(page => page.Content).HasColumnType("nvarchar(max)");
+            entity.Property(page => page.PlainText).HasColumnType("nvarchar(max)");
             entity.Property(page => page.MetadataJson).HasColumnType("nvarchar(max)");
             entity.Property(page => page.IsArchived).HasDefaultValue(false);
             entity.Property(page => page.SortOrder).HasDefaultValue(0);

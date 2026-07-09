@@ -2,11 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-
-interface WorkspaceOption {
-  id: number;
-  name: string;
-}
+import { WorkspaceService, WorkspaceResponse } from '../services/workspace.service';
 
 @Component({
   selector: 'app-slide-bar',
@@ -17,21 +13,30 @@ interface WorkspaceOption {
 })
 export class SlideBarComponent implements OnInit {
   activeWorkspaceId = 1;
-  workspaces: WorkspaceOption[] = [];
+  workspaces: WorkspaceResponse[] = [];
 
   readonly navItems = [
     { label: 'Search', icon: 'search', route: '/search' },
     { label: 'New Page', icon: 'plus', route: '/new-page' },
     { label: 'All Pages', icon: 'page', route: '/all-pages' },
     { label: 'Tasks', icon: 'check', route: '/tasks' }
-  
   ];
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly workspaceService: WorkspaceService
+  ) {}
 
   ngOnInit(): void {
-    this.workspaces = this.loadWorkspaces();
-    this.activeWorkspaceId = this.getActiveWorkspaceId();
+    this.workspaceService.getWorkspaces().subscribe({
+      next: (workspaces) => {
+        this.workspaces = workspaces;
+        this.activeWorkspaceId = this.getActiveWorkspaceId();
+      },
+      error: (err) => {
+        console.error('Error loading workspaces from server:', err);
+      }
+    });
   }
 
   changeWorkspace(workspaceId: string | number): void {
@@ -47,36 +52,11 @@ export class SlideBarComponent implements OnInit {
     const savedWorkspaceId = Number(localStorage.getItem('activeWorkspaceId'));
     const fallbackId = this.workspaces[0]?.id ?? 1;
 
-    if (this.workspaces.some(workspace => workspace.id === savedWorkspaceId)) {
+    if (this.workspaces.some(w => w.id === savedWorkspaceId)) {
       return savedWorkspaceId;
     }
 
     localStorage.setItem('activeWorkspaceId', String(fallbackId));
     return fallbackId;
-  }
-
-  private loadWorkspaces(): WorkspaceOption[] {
-    const storedWorkspaces = localStorage.getItem('workspaces');
-
-    if (storedWorkspaces) {
-      try {
-        const parsedWorkspaces = JSON.parse(storedWorkspaces) as WorkspaceOption[];
-
-        if (Array.isArray(parsedWorkspaces) && parsedWorkspaces.length > 0) {
-          return parsedWorkspaces;
-        }
-      } catch {
-        localStorage.removeItem('workspaces');
-      }
-    }
-
-    const defaultWorkspaces = [
-      { id: 1, name: 'Deep Work Workspace' },
-      { id: 2, name: 'Product Team' },
-      { id: 3, name: 'Personal Notes' }
-    ];
-
-    localStorage.setItem('workspaces', JSON.stringify(defaultWorkspaces));
-    return defaultWorkspaces;
   }
 }

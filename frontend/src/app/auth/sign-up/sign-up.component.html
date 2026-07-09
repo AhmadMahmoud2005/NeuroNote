@@ -9,6 +9,55 @@
     <!-- Form -->
     <form class="auth-form" (ngSubmit)="onSubmit(registerForm)" #registerForm="ngForm" novalidate>
 
+      <!-- Server Error -->
+      <div class="server-error" *ngIf="errorMessage">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Username -->
+      <div class="form-group">
+        <label class="form-label" for="reg-username">USERNAME</label>
+        <div class="input-wrapper"
+             [class.is-valid]="usernameField.touched && usernameField.valid"
+             [class.is-invalid]="usernameField.touched && usernameField.invalid">
+          <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <input
+            id="reg-username"
+            type="text"
+            class="form-input"
+            placeholder="johndoe"
+            [(ngModel)]="username"
+            (input)="onUsernameInput($event)"
+            name="username"
+            #usernameField="ngModel"
+            required
+            minlength="3"
+            maxlength="100"
+            pattern="^[a-z0-9-]+$"
+          />
+        </div>
+        <div class="error-messages" *ngIf="usernameField.touched && usernameField.invalid">
+          <p class="error-msg" *ngIf="usernameField.errors?.['required']">
+            Username is required.
+          </p>
+          <p class="error-msg" *ngIf="usernameField.errors?.['minlength']">
+            Username must be at least 3 characters.
+          </p>
+          <p class="error-msg" *ngIf="usernameField.errors?.['pattern']">
+            Username can only contain lowercase letters, numbers, and hyphens.
+          </p>
+        </div>
+      </div>
+
       <!-- Full Name -->
       <div class="form-group">
         <label class="form-label" for="reg-name">FULL NAME</label>
@@ -112,8 +161,9 @@
       </div>
 
       <!-- Submit -->
-      <button type="submit" class="btn-submit" [class.btn-disabled]="registerForm.invalid">
-        Join the workspace
+      <button type="submit" class="btn-submit" [class.btn-disabled]="registerForm.invalid || isLoading">
+        <span *ngIf="!isLoading">Join the workspace</span>
+        <span *ngIf="isLoading" class="btn-loading">Creating account...</span>
       </button>
 
       <!-- Switch to Login -->

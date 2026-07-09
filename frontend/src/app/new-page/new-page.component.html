@@ -3,40 +3,89 @@
 
   <section class="editor-page">
     <header class="page-topbar">
-      <div class="save-state">{{ lastSavedLabel }}</div>
+      <div class="save-state">
+        <span *ngIf="isDirty" class="dirty-badge">Unsaved changes</span>
+        <span *ngIf="!isDirty">{{ lastSavedLabel }}</span>
+      </div>
 
       <div class="top-actions">
+        <button type="button" class="btn-save" (click)="savePage()">Save Note</button>
         <button type="button" class="icon-button share" aria-label="Share page"></button>
         <button type="button" class="icon-button bell" aria-label="Notifications"></button>
-        <button type="button" class="profile-button" aria-label="Profile">A</button>
+        <button type="button" class="profile-button" aria-label="Profile" routerLink="/settings">{{ getAvatarCharacter() }}</button>
       </div>
     </header>
 
     <main class="editor-wrap">
       <nav class="breadcrumb" aria-label="Page location">
         <span class="folder-icon" aria-hidden="true"></span>
-        <span>Product Development</span>
+        <span>Workspace Notes</span>
         <span aria-hidden="true">&gt;</span>
-        <strong>Drafts</strong>
+        <strong>Page Editor</strong>
       </nav>
 
+      <!-- Page Title -->
       <input
         class="title-input"
         type="text"
         aria-label="Page title"
-        placeholder="Untitled"
+        placeholder="Untitled Note"
         [(ngModel)]="title"
-        (ngModelChange)="scheduleSave()"
+        (ngModelChange)="onTitleChange()"
       />
 
-      <div class="toolbar" aria-label="Editor toolbar">
-        <button type="button" class="style-select" (click)="setBlock('p')">Normal</button>
-        <button type="button" class="tool-button" (click)="format('bold')" aria-label="Bold">B</button>
-        <button type="button" class="tool-button italic" (click)="format('italic')" aria-label="Italic">I</button>
-        <button type="button" class="tool-button underline" (click)="format('underline')" aria-label="Underline">U</button>
-        <button type="button" class="tool-button link" (click)="format('createLink')" aria-label="Add link"></button>
-        <button type="button" class="tool-button image" (click)="openImagePicker()" aria-label="Add image"></button>
-        <button type="button" class="clear-button" (click)="clearPage()">Clear</button>
+      <!-- Toolbar: Visible only when text selection is active -->
+      <div class="toolbar" *ngIf="showToolbar" aria-label="Editor toolbar">
+        
+        <!-- Size control stepper (- size +) -->
+        <div class="size-control">
+          <button type="button" class="size-btn" (click)="decreaseSize()" (mousedown)="$event.preventDefault()">-</button>
+          <input type="number" class="size-input" [(ngModel)]="currentFontSize" (change)="onFontSizeChange()" (focus)="onToolbarFocus()" (blur)="onToolbarBlur()" />
+          <button type="button" class="size-btn" (click)="increaseSize()" (mousedown)="$event.preventDefault()">+</button>
+        </div>
+
+        <div class="separator"></div>
+
+        <button type="button" class="tool-button" (click)="format('bold')" (mousedown)="$event.preventDefault()" aria-label="Bold">B</button>
+        <button type="button" class="tool-button italic" (click)="format('italic')" (mousedown)="$event.preventDefault()" aria-label="Italic">I</button>
+        <button type="button" class="tool-button underline" (click)="format('underline')" (mousedown)="$event.preventDefault()" aria-label="Underline">U</button>
+        
+        <div class="separator"></div>
+
+        <!-- Text Color -->
+        <div class="dropdown-wrapper">
+          <button type="button" class="tool-button color" (click)="showColorDropdown = !showColorDropdown" (mousedown)="$event.preventDefault()" aria-label="Text color">A</button>
+          <div class="color-dropdown" *ngIf="showColorDropdown">
+            <button type="button" *ngFor="let color of textColors" 
+                    [style.background-color]="color.value" 
+                    [title]="color.name"
+                    (click)="applyTextColor(color.value)"
+                    (mousedown)="$event.preventDefault()"
+                    class="color-dot"></button>
+          </div>
+        </div>
+
+        <!-- Highlight Color -->
+        <div class="dropdown-wrapper">
+          <button type="button" class="tool-button highlight" (click)="showHighlightDropdown = !showHighlightDropdown" (mousedown)="$event.preventDefault()" aria-label="Highlight color"></button>
+          <div class="color-dropdown" *ngIf="showHighlightDropdown">
+            <button type="button" *ngFor="let hl of highlightColors" 
+                    [style.background-color]="hl.value === 'transparent' ? '#E2E8F0' : hl.value" 
+                    [title]="hl.name"
+                    (click)="applyHighlightColor(hl.value)"
+                    (mousedown)="$event.preventDefault()"
+                    class="color-dot hilite-dot"></button>
+          </div>
+        </div>
+
+        <div class="separator"></div>
+
+        <!-- Reset formatting button -->
+        <button type="button" class="tool-button reset" (click)="resetFormat()" (mousedown)="$event.preventDefault()" title="Reset Formatting">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2.5 2v6h6M21.5 22v-6h-6M22 11.5A10 10 0 0 0 3.2 7.2L2.5 8M2 12.5a10 10 0 0 0 18.8 4.3l.7-.8"></path>
+          </svg>
+        </button>
       </div>
 
       <input
@@ -52,19 +101,38 @@
         <button type="button" (click)="removeImage()">Remove image</button>
       </figure>
 
+      <!-- Editor Content editable div -->
       <section
         #editor
         class="content-editor"
         contenteditable="true"
-        [innerHTML]="contentHtml"
-        (input)="updateContent()"
+        (input)="onContentInput()"
         aria-label="Page content"
       ></section>
 
       <button type="button" class="add-content" (click)="openImagePicker()">
         <span aria-hidden="true">+</span>
-        Click to add content
+        Attach Cover Image
       </button>
     </main>
   </section>
+
+  <!-- Beautiful Leave Warning Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showLeaveWarning">
+    <div class="modal-card">
+      <div class="modal-header">
+        <svg class="warning-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <h2>Unsaved Changes</h2>
+      </div>
+      <p class="modal-text">You have unsaved changes on this page. If you leave now, your edits will be permanently lost.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="cancelLeave()">Stay and Edit</button>
+        <button type="button" class="btn-danger" (click)="confirmLeave()">Discard Changes</button>
+      </div>
+    </div>
+  </div>
 </div>

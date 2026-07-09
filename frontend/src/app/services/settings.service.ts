@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, of, tap } from 'rxjs';
+import { environment } from '../environment';
 
 export interface UserProfile {
   id: number;
@@ -18,7 +19,7 @@ export interface UpdateProfileRequest {
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
-  private readonly apiUrl = 'https://localhost:5001/api/v1';
+  private readonly apiUrl = environment.apiUrl;
   private readonly profileKey = 'settingsProfile';
 
   constructor(private readonly http: HttpClient) {}

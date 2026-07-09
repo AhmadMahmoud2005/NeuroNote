@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "NeuroNote.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:1112;http://localhost:1113"
+    }
+  }
+}

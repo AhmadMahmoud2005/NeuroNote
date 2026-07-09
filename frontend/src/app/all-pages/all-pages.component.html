@@ -4,8 +4,7 @@
   <section class="page-content">
     <header class="topbar">
       <div>
-        
-        <h1>Hello, Alex.</h1>
+        <h1>Hello, {{ currentUser?.fullName || 'User' }}.</h1>
       </div>
 
       <div class="topbar-actions">
@@ -36,8 +35,8 @@
           </div>
         </div>
 
-        <button type="button" class="avatar-button" aria-label="Open profile menu">
-          <span>AL</span>
+        <button type="button" class="avatar-button" aria-label="Open profile menu" routerLink="/settings">
+          <span>{{ getAvatarCharacter() }}</span>
         </button>
       </div>
     </header>
@@ -46,19 +45,26 @@
       <section class="notes-section">
         <div class="section-header">
           <h2>Recent Notes</h2>
-          <a href="#" (click)="$event.preventDefault()">View All</a>
+          <a routerLink="/all-pages">View All</a>
         </div>
 
         <div class="notes-grid">
-          <article *ngFor="let note of recentNotes" class="note-card">
+          <!-- Real Pages -->
+          <article *ngFor="let page of pages" class="note-card" [routerLink]="['/new-page']" [queryParams]="{ id: page.id }">
             <div class="note-card-top">
-              <span class="tag">{{ note.label }}</span>
+              <span class="tag">Note</span>
               <span class="open-icon" aria-hidden="true"></span>
             </div>
-            <h3>{{ note.title }}</h3>
-            <p>{{ note.description }}</p>
-            <span class="edited">{{ note.edited }}</span>
+            <h3>{{ page.title }}</h3>
+            <p>{{ truncate(page.plainText || '', 80) || 'No content yet...' }}</p>
+            <span class="edited">Edited {{ page.updatedAt ? (page.updatedAt | date:'shortTime') : (page.createdAt | date:'shortTime') }}</span>
           </article>
+
+          <!-- Empty State -->
+          <div *ngIf="pages.length === 0" class="empty-pages-state">
+            <p>No notes in this workspace yet. Get started by creating a new page!</p>
+            <button type="button" class="create-page-btn" routerLink="/new-page">Create New Page</button>
+          </div>
         </div>
       </section>
 

@@ -105,6 +105,7 @@
 .editor-wrap {
   width: min(100%, 780px);
   margin: 3.2rem auto 0;
+  position: relative;
 }
 
 .breadcrumb {
@@ -160,6 +161,11 @@
 }
 
 .toolbar {
+  position: absolute;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
   width: fit-content;
   display: flex;
   align-items: center;
@@ -167,9 +173,9 @@
   border: 1px solid rgba(100, 116, 139, 0.18);
   border-radius: 999px;
   background: var(--color-white);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
-  margin: 3.6rem auto 2.2rem;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15);
   padding: 0.45rem;
+  animation: fadeInScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toolbar button {
@@ -318,4 +324,241 @@
     justify-content: center;
     border-radius: 0.75rem;
   }
+}
+
+/* Save Note button */
+.btn-save {
+  background-color: var(--color-primary);
+  color: var(--color-white) !important;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-save:hover {
+  background-color: #2563EB;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+/* Unsaved changes badge */
+.dirty-badge {
+  background-color: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+  padding: 0.25rem 0.65rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Stepper font size control */
+.size-control {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--color-secondary);
+  border-radius: 999px;
+  padding: 0.15rem;
+}
+
+.size-btn {
+  width: 1.6rem !important;
+  height: 1.6rem !important;
+  font-size: 1rem !important;
+  min-width: 0 !important;
+  background: transparent !important;
+  border: none;
+  cursor: pointer;
+}
+
+.size-input {
+  width: 2.2rem;
+  text-align: center;
+  border: none;
+  background: transparent;
+  font-family: var(--font-family);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--color-neutral);
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.size-input::-webkit-outer-spin-button,
+.size-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.separator {
+  width: 1px;
+  height: 1.5rem;
+  background: rgba(100, 116, 139, 0.18);
+  margin: 0 0.4rem;
+}
+
+/* Dropdowns for text and background colors */
+.dropdown-wrapper {
+  position: relative;
+}
+
+.tool-button.color {
+  font-family: serif;
+  font-size: 1.1rem;
+}
+
+.tool-button.highlight {
+  position: relative;
+}
+
+.tool-button.highlight::before {
+  content: "✏️";
+  font-size: 0.95rem;
+}
+
+.color-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: var(--color-white);
+  border: 1px solid rgba(100, 116, 139, 0.18);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+
+.color-dot {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  min-width: 0 !important;
+  border-radius: 50% !important;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0;
+}
+
+.color-dot:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.hilite-dot {
+  border-radius: 0.25rem !important;
+}
+
+/* Leave warning modal style */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.modal-card {
+  background: var(--color-white);
+  border-radius: 1rem;
+  padding: 2.25rem 2rem;
+  width: 90%;
+  max-width: 440px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.24);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-header h2 {
+  color: var(--color-neutral);
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.warning-icon {
+  flex-shrink: 0;
+}
+
+.modal-text {
+  color: var(--color-ternary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 0.85rem;
+  font-family: var(--font-family);
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-secondary {
+  background: var(--color-secondary);
+  color: var(--color-neutral);
+}
+
+.btn-secondary:hover {
+  background: #E2E8F0;
+}
+
+.btn-danger {
+  background: #EF4444;
+  color: var(--color-white);
+}
+
+.btn-danger:hover {
+  background: #DC2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: translate(-50%, 5px) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
