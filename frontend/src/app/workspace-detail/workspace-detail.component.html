@@ -1,0 +1,61 @@
+<div class="workspace-shell">
+  <app-slide-bar></app-slide-bar>
+
+  <section class="page-content">
+    <div *ngIf="isLoading" class="loading-container">
+      <p>Loading workspace details...</p>
+    </div>
+
+    <div *ngIf="!isLoading && workspace">
+      <header class="workspace-header">
+        <div class="workspace-meta">
+          <!-- Shared / Private label -->
+          <span class="privacy-badge" [class.shared]="workspace.isShared || !isOwner">
+            {{ (workspace.isShared || !isOwner) ? 'Shared Workspace' : 'Private Workspace' }}
+          </span>
+          <span class="owner-label">
+            Owner: <strong>{{ isOwner ? 'Me' : workspace.ownerUsername }}</strong>
+          </span>
+        </div>
+
+        <div class="workspace-title-bar">
+          <div>
+            <h1>{{ workspace.name }}</h1>
+            <p class="subtitle">{{ workspace.description || 'No description provided.' }}</p>
+          </div>
+
+          <div class="workspace-actions" *ngIf="isOwner">
+            <button type="button" class="btn-edit" [routerLink]="['/edit-workspace']" [queryParams]="{ id: workspace.id }">Edit Workspace</button>
+            <button type="button" class="btn-delete" (click)="deleteWorkspace()">Delete Workspace</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace-notes-area">
+        <div class="section-title">
+          <h2>Workspace Notes</h2>
+          <button type="button" class="btn-create-note" [routerLink]="['/new-page']">Create New Note</button>
+        </div>
+
+        <div class="notes-grid">
+          <!-- Pages in workspace -->
+          <article *ngFor="let page of pages" class="note-card" [routerLink]="['/new-page']" [queryParams]="{ id: page.id }">
+            <div class="note-card-top">
+              <span class="tag">Note</span>
+              <span class="open-icon" aria-hidden="true"></span>
+            </div>
+            <h3>{{ page.title }}</h3>
+            <p>{{ truncate(page.plainText || '', 100) || 'No content yet...' }}</p>
+            <span class="edited">Edited {{ formatToCairoTime(page.updatedAt || page.createdAt) }}</span>
+          </article>
+
+          <!-- Empty state inside workspace detail notes -->
+          <div *ngIf="pages.length === 0" class="empty-pages-state">
+            <p>No notes in this workspace yet. Get started by creating a new page!</p>
+            <button type="button" class="create-page-btn" [routerLink]="['/new-page']">Create New Page</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+</div>

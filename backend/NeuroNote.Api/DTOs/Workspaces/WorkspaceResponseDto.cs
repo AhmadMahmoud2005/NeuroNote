@@ -7,5 +7,7 @@ public class WorkspaceResponseDto
     public string Slug { get; set; } = string.Empty;
     public string? Description { get; set; }
     public int OwnerUserId { get; set; }
+    public string OwnerUsername { get; set; } = string.Empty;
+    public bool IsShared { get; set; }
     public DateTime CreatedAt { get; set; }
 }

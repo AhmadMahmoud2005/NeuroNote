@@ -63,7 +63,13 @@ export class SlideBarComponent implements OnInit {
 
   changeWorkspace(workspaceId: string | number): void {
     localStorage.setItem('activeWorkspaceId', String(workspaceId));
-    window.location.reload();
+    this.router.navigate(['/workspace-detail'], { queryParams: { id: workspaceId } }).then(() => {
+      window.location.reload();
+    });
+  }
+
+  isWorkspaceRouteActive(): boolean {
+    return ['/all-pages', '/workspace-detail', '/edit-workspace', '/new-page'].some(path => this.router.url.startsWith(path));
   }
 
   isActive(route: string): boolean {

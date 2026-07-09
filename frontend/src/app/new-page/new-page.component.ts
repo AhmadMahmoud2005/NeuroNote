@@ -264,6 +264,22 @@ export class NewPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  deletePage(): void {
+    if (!this.pageId || !this.isOwnerOfPage) return;
+    if (confirm(`Are you sure you want to delete note "${this.title}"?`)) {
+      this.pageService.deletePage(this.pageId).subscribe({
+        next: () => {
+          this.isDirty = false;
+          this.router.navigate(['/workspace-detail'], { queryParams: { id: this.activeWorkspaceId } });
+        },
+        error: (err) => {
+          console.error('Error deleting page:', err);
+          alert('Failed to delete page. Please try again.');
+        }
+      });
+    }
+  }
+
   // Routing Leave Warning Logic
   canDeactivate(): Observable<boolean> | boolean {
     if (!this.isDirty) {

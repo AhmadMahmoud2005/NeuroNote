@@ -54,8 +54,8 @@ public class PagesController : ControllerBase
                 PlainText = p.PlainText,
                 IsArchived = p.IsArchived,
                 SortOrder = p.SortOrder,
-                CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt
+                CreatedAt = p.CreatedAt.AddHours(3), // Add Cairo timezone offset (UTC+3)
+                UpdatedAt = p.UpdatedAt.HasValue ? p.UpdatedAt.Value.AddHours(3) : null
             })
             .ToListAsync();
 
@@ -89,8 +89,8 @@ public class PagesController : ControllerBase
                 PlainText = sp.Page.PlainText,
                 IsArchived = sp.Page.IsArchived,
                 SortOrder = sp.Page.SortOrder,
-                CreatedAt = sp.Page.CreatedAt,
-                UpdatedAt = sp.Page.UpdatedAt
+                CreatedAt = sp.Page.CreatedAt.AddHours(3), // Add Cairo timezone offset (UTC+3)
+                UpdatedAt = sp.Page.UpdatedAt.HasValue ? sp.Page.UpdatedAt.Value.AddHours(3) : null
             })
             .ToListAsync();
 
@@ -117,7 +117,7 @@ public class PagesController : ControllerBase
                 PageTitle = sp.Page.Title,
                 SharedByUsername = sp.Page.CreatedByUser.Username,
                 Permission = sp.Permission,
-                SharedAt = sp.SharedAt
+                SharedAt = sp.SharedAt.AddHours(3) // Add Cairo timezone offset (UTC+3)
             })
             .ToListAsync();
 
@@ -202,8 +202,8 @@ public class PagesController : ControllerBase
             PlainText = page.PlainText,
             IsArchived = page.IsArchived,
             SortOrder = page.SortOrder,
-            CreatedAt = page.CreatedAt,
-            UpdatedAt = page.UpdatedAt
+            CreatedAt = page.CreatedAt.AddHours(3), // Add Cairo timezone offset (UTC+3)
+            UpdatedAt = page.UpdatedAt.HasValue ? page.UpdatedAt.Value.AddHours(3) : null
         });
     }
 
@@ -262,8 +262,8 @@ public class PagesController : ControllerBase
             PlainText = createdPage.PlainText,
             IsArchived = createdPage.IsArchived,
             SortOrder = createdPage.SortOrder,
-            CreatedAt = createdPage.CreatedAt,
-            UpdatedAt = createdPage.UpdatedAt
+            CreatedAt = createdPage.CreatedAt.AddHours(3), // Add Cairo timezone offset (UTC+3)
+            UpdatedAt = createdPage.UpdatedAt.HasValue ? createdPage.UpdatedAt.Value.AddHours(3) : null
         });
     }
 
@@ -319,8 +319,8 @@ public class PagesController : ControllerBase
             PlainText = page.PlainText,
             IsArchived = page.IsArchived,
             SortOrder = page.SortOrder,
-            CreatedAt = page.CreatedAt,
-            UpdatedAt = page.UpdatedAt
+            CreatedAt = page.CreatedAt.AddHours(3), // Add Cairo timezone offset (UTC+3)
+            UpdatedAt = page.UpdatedAt.HasValue ? page.UpdatedAt.Value.AddHours(3) : null
         });
     }
 

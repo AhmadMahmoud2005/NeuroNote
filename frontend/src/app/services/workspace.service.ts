@@ -9,6 +9,8 @@ export interface WorkspaceResponse {
   slug: string;
   description: string | null;
   ownerUserId: number;
+  ownerUsername: string;
+  isShared: boolean;
   createdAt: string;
 }
 
@@ -36,8 +38,20 @@ export class WorkspaceService {
     return this.http.get<WorkspaceResponse[]>(this.apiUrl);
   }
 
+  getWorkspace(id: number): Observable<WorkspaceResponse> {
+    return this.http.get<WorkspaceResponse>(`${this.apiUrl}/${id}`);
+  }
+
   createWorkspace(request: CreateWorkspaceRequest): Observable<WorkspaceResponse> {
     return this.http.post<WorkspaceResponse>(this.apiUrl, request);
+  }
+
+  updateWorkspace(id: number, request: CreateWorkspaceRequest): Observable<WorkspaceResponse> {
+    return this.http.put<WorkspaceResponse>(`${this.apiUrl}/${id}`, request);
+  }
+
+  deleteWorkspace(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
   getInvitations(): Observable<WorkspaceInvitation[]> {

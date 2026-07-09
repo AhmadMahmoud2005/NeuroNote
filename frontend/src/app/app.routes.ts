@@ -10,6 +10,8 @@ import { SearchComponent } from './search/search.component';
 import { SettingsComponent } from './settings/settings.component';
 import { WorkspacesComponent } from './workspaces/workspaces.component';
 import { SharedNotesComponent } from './shared-notes/shared-notes.component';
+import { WorkspaceDetailComponent } from './workspace-detail/workspace-detail.component';
+import { EditWorkspaceComponent } from './edit-workspace/edit-workspace.component';
 import { authGuard } from './guards/auth.guard';
 import { pendingChangesGuard } from './guards/pending-changes.guard';
 
@@ -25,5 +27,7 @@ export const routes: Routes = [
   { path: 'search', component: SearchComponent, canActivate: [authGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
   { path: 'workspaces', component: WorkspacesComponent, canActivate: [authGuard] },
-  { path: 'shared-notes', component: SharedNotesComponent, canActivate: [authGuard] }
+  { path: 'shared-notes', component: SharedNotesComponent, canActivate: [authGuard] },
+  { path: 'workspace-detail', component: WorkspaceDetailComponent, canActivate: [authGuard] },
+  { path: 'edit-workspace', component: EditWorkspaceComponent, canActivate: [authGuard] }
 ];

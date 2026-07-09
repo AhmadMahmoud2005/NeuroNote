@@ -14,7 +14,7 @@
       <div 
         *ngFor="let ws of personalWorkspaces" 
         class="workspace-item"
-        [class.active]="ws.id === activeWorkspaceId"
+        [class.active]="ws.id === activeWorkspaceId && isWorkspaceRouteActive()"
         (click)="changeWorkspace(ws.id)"
       >
         <span class="ws-bullet">•</span>
@@ -32,7 +32,7 @@
       <div 
         *ngFor="let ws of sharedWorkspaces" 
         class="workspace-item"
-        [class.active]="ws.id === activeWorkspaceId"
+        [class.active]="ws.id === activeWorkspaceId && isWorkspaceRouteActive()"
         (click)="changeWorkspace(ws.id)"
       >
         <span class="ws-bullet">•</span>

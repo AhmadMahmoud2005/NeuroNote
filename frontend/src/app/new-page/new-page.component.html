@@ -10,6 +10,7 @@
 
       <div class="top-actions">
         <button type="button" class="btn-save" (click)="savePage()">Save Note</button>
+        <button type="button" class="btn-delete-page" *ngIf="pageId && isOwnerOfPage" (click)="deletePage()">Delete Note</button>
         <button type="button" class="icon-button share" *ngIf="pageId" (click)="openShareModal()" aria-label="Share page"></button>
         <button type="button" class="icon-button bell" aria-label="Notifications"></button>
         <button type="button" class="profile-button" aria-label="Profile" routerLink="/settings">{{ getAvatarCharacter() }}</button>

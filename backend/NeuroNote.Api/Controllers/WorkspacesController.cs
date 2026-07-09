@@ -39,11 +39,48 @@ public class WorkspacesController : ControllerBase
                 Slug = w.Slug,
                 Description = w.Description,
                 OwnerUserId = w.OwnerUserId,
-                CreatedAt = w.CreatedAt
+                OwnerUsername = w.OwnerUser.Username,
+                IsShared = w.Members.Any(m => m.UserId != w.OwnerUserId) || w.Invitations.Any(i => i.Status == "Accepted"),
+                CreatedAt = w.CreatedAt.AddHours(3) // Add Cairo timezone offset (UTC+3)
             })
             .ToListAsync();
 
         return Ok(workspaces);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetWorkspace(int id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var workspace = await _context.Workspaces
+            .Include(w => w.OwnerUser)
+            .Include(w => w.Members)
+            .Include(w => w.Invitations)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (workspace == null)
+            return NotFound(new { message = "Workspace not found." });
+
+        var hasAccess = workspace.OwnerUserId == userId || workspace.Members.Any(m => m.UserId == userId);
+        if (!hasAccess)
+            return Forbid();
+
+        return Ok(new WorkspaceResponseDto
+        {
+            Id = workspace.Id,
+            Name = workspace.Name,
+            Slug = workspace.Slug,
+            Description = workspace.Description,
+            OwnerUserId = workspace.OwnerUserId,
+            OwnerUsername = workspace.OwnerUser.Username,
+            IsShared = workspace.Members.Any(m => m.UserId != workspace.OwnerUserId) || workspace.Invitations.Any(i => i.Status == "Accepted"),
+            CreatedAt = workspace.CreatedAt.AddHours(3) // Add Cairo timezone offset (UTC+3)
+        });
     }
 
     [HttpPost]
@@ -72,6 +109,52 @@ public class WorkspacesController : ControllerBase
         _context.Workspaces.Add(workspace);
         await _context.SaveChangesAsync();
 
+        var createdWorkspace = await _context.Workspaces
+            .Include(w => w.OwnerUser)
+            .FirstAsync(w => w.Id == workspace.Id);
+
+        return Ok(new WorkspaceResponseDto
+        {
+            Id = createdWorkspace.Id,
+            Name = createdWorkspace.Name,
+            Slug = createdWorkspace.Slug,
+            Description = createdWorkspace.Description,
+            OwnerUserId = createdWorkspace.OwnerUserId,
+            OwnerUsername = createdWorkspace.OwnerUser.Username,
+            IsShared = false,
+            CreatedAt = createdWorkspace.CreatedAt.AddHours(3) // Add Cairo timezone offset (UTC+3)
+        });
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateWorkspace(int id, [FromBody] CreateWorkspaceDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var workspace = await _context.Workspaces
+            .Include(w => w.OwnerUser)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (workspace == null)
+            return NotFound(new { message = "Workspace not found." });
+
+        if (workspace.OwnerUserId != userId)
+            return Forbid();
+
+        workspace.Name = dto.Name;
+        workspace.Description = dto.Description;
+        workspace.Slug = await GenerateUniqueWorkspaceSlugAsync(dto.Name);
+        workspace.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
         return Ok(new WorkspaceResponseDto
         {
             Id = workspace.Id,
@@ -79,8 +162,32 @@ public class WorkspacesController : ControllerBase
             Slug = workspace.Slug,
             Description = workspace.Description,
             OwnerUserId = workspace.OwnerUserId,
-            CreatedAt = workspace.CreatedAt
+            OwnerUsername = workspace.OwnerUser.Username,
+            IsShared = workspace.Members.Any(m => m.UserId != workspace.OwnerUserId) || workspace.Invitations.Any(i => i.Status == "Accepted"),
+            CreatedAt = workspace.CreatedAt.AddHours(3) // Add Cairo timezone offset (UTC+3)
         });
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteWorkspace(int id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var workspace = await _context.Workspaces.FindAsync(id);
+        if (workspace == null)
+            return NotFound(new { message = "Workspace not found." });
+
+        if (workspace.OwnerUserId != userId)
+            return Forbid();
+
+        _context.Workspaces.Remove(workspace);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 
     [HttpGet("invitations")]
@@ -106,7 +213,7 @@ public class WorkspacesController : ControllerBase
                 WorkspaceName = i.Workspace.Name,
                 InvitedByUsername = i.InvitedByUser.Username,
                 Role = i.MemberRole,
-                CreatedAt = i.CreatedAt
+                CreatedAt = i.CreatedAt.AddHours(3) // Add Cairo timezone offset (UTC+3)
             })
             .ToListAsync();
 

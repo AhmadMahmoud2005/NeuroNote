@@ -732,3 +732,21 @@
   font-style: italic;
   margin: 0;
 }
+
+.btn-delete-page {
+  background: #FEF2F2 !important;
+  color: #EF4444 !important;
+  border: 1px solid #FCA5A5 !important;
+  border-radius: 0.5rem;
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.55rem 1rem !important;
+  transition: var(--transition-smooth);
+}
+
+.btn-delete-page:hover {
+  background: #EF4444 !important;
+  color: var(--color-white) !important;
+}
