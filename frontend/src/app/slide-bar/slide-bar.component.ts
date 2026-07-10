@@ -25,8 +25,8 @@ export class SlideBarComponent implements OnInit {
   readonly navItems = [
     { label: 'Search', icon: 'search', route: '/search' },
     { label: 'New Page', icon: 'plus', route: '/new-page' },
-    { label: 'All Pages', icon: 'page', route: '/all-pages' },
-    { label: 'Tasks', icon: 'check', route: '/tasks' },
+    { label: 'Home', icon: 'page', route: '/all-pages' },
+    { label: "Today's Missions", icon: 'check', route: '/tasks' },
     { label: 'Shared Notes', icon: 'shared', route: '/shared-notes' }
   ];
 
@@ -69,7 +69,7 @@ export class SlideBarComponent implements OnInit {
   }
 
   isWorkspaceRouteActive(): boolean {
-    return ['/all-pages', '/workspace-detail', '/edit-workspace', '/new-page'].some(path => this.router.url.startsWith(path));
+    return ['/workspace-detail', '/edit-workspace', '/new-page'].some(path => this.router.url.startsWith(path));
   }
 
   isActive(route: string): boolean {

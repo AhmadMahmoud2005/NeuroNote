@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SlideBarComponent } from '../slide-bar/slide-bar.component';
 import { AuthService } from '../services/auth.service';
@@ -16,55 +16,81 @@ import { WorkspaceService, WorkspaceInvitation, WorkspaceResponse } from '../ser
   styleUrl: './all-pages.component.css'
 })
 export class AllPagesComponent implements OnInit {
-  activeWorkspaceId = 1;
-  activeWorkspaceName = 'Personal Workspace';
-  workspaces: WorkspaceResponse[] = [];
+  pages: PageResponse[] = [];
+  sharedPages: PageResponse[] = [];
+  personalWorkspaces: WorkspaceResponse[] = [];
+  sharedWorkspaces: WorkspaceResponse[] = [];
   pendingInvitations: WorkspaceInvitation[] = [];
   pendingPageInvitations: PageInvitation[] = [];
   isNotificationsOpen = false;
   currentUser: AuthUser | null = null;
-  pages: PageResponse[] = [];
-  sharedPages: PageResponse[] = [];
+  isLoading = true;
 
-  // Workspace Invite Form States
-  inviteInput = '';
-  inviteSuccessMessage = '';
-  inviteErrorMessage = '';
-  isInviting = false;
+  // Search in Topbar
+  topbarQuery = '';
 
   constructor(
     private readonly authService: AuthService,
     private readonly pageService: PageService,
-    private readonly workspaceService: WorkspaceService
+    private readonly workspaceService: WorkspaceService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.currentUser;
-    this.activeWorkspaceId = Number(localStorage.getItem('activeWorkspaceId')) || 1;
-
-    this.loadWorkspacesAndData();
+    this.loadWorkspaces();
+    this.loadData();
     this.loadInvitations();
   }
 
-  loadWorkspacesAndData(): void {
+  onTopbarSearch(): void {
+    const q = this.topbarQuery.trim();
+    if (q) {
+      this.router.navigate(['/search'], { queryParams: { q } });
+    }
+  }
+
+  loadWorkspaces(): void {
     this.workspaceService.getWorkspaces().subscribe({
       next: (workspaces) => {
-        this.workspaces = workspaces;
-        const currentWS = workspaces.find(w => w.id === this.activeWorkspaceId);
-        if (currentWS) {
-          this.activeWorkspaceName = currentWS.name;
-        } else if (workspaces.length > 0) {
-          this.activeWorkspaceId = workspaces[0].id;
-          this.activeWorkspaceName = workspaces[0].name;
-          localStorage.setItem('activeWorkspaceId', String(workspaces[0].id));
+        if (this.currentUser) {
+          const userId = this.currentUser.userId;
+          this.personalWorkspaces = workspaces.filter(w => w.ownerUserId === userId);
+          this.sharedWorkspaces = workspaces.filter(w => w.ownerUserId !== userId);
+        } else {
+          this.personalWorkspaces = workspaces;
+          this.sharedWorkspaces = [];
         }
-        this.loadPages();
+      },
+      error: (err) => {
+        console.error('Error loading workspaces for Home dashboard:', err);
+      }
+    });
+  }
+
+  loadData(): void {
+    this.isLoading = true;
+    this.pageService.getAllPages().subscribe({
+      next: (pages) => {
+        this.pages = pages;
         this.loadSharedPages();
       },
       error: (err) => {
-        console.error('Error loading workspaces:', err);
-        this.loadPages();
+        console.error('Error loading all pages:', err);
         this.loadSharedPages();
+      }
+    });
+  }
+
+  loadSharedPages(): void {
+    this.pageService.getSharedPages().subscribe({
+      next: (pages) => {
+        this.sharedPages = pages;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading shared pages:', err);
+        this.isLoading = false;
       }
     });
   }
@@ -98,7 +124,6 @@ export class AllPagesComponent implements OnInit {
       next: () => {
         this.loadInvitations();
         if (accept) {
-          // Switch to accepted workspace and reload
           localStorage.setItem('activeWorkspaceId', String(invitation.workspaceId));
           window.location.reload();
         }
@@ -113,7 +138,7 @@ export class AllPagesComponent implements OnInit {
     this.pageService.respondToPageInvitation(invitation.id, accept).subscribe({
       next: () => {
         this.loadInvitations();
-        this.loadSharedPages();
+        this.loadData();
       },
       error: (err) => {
         console.error('Error responding to page invitation:', err);
@@ -125,49 +150,6 @@ export class AllPagesComponent implements OnInit {
     if (!this.currentUser || !this.currentUser.fullName) return 'A';
     const trimmed = this.currentUser.fullName.trim();
     return trimmed.length > 0 ? trimmed.charAt(0).toUpperCase() : 'A';
-  }
-
-  loadPages(): void {
-    this.pageService.getPages(this.activeWorkspaceId).subscribe({
-      next: (pages) => {
-        this.pages = pages;
-      },
-      error: (err) => {
-        console.error('Error loading pages:', err);
-      }
-    });
-  }
-
-  loadSharedPages(): void {
-    this.pageService.getSharedPages().subscribe({
-      next: (pages) => {
-        this.sharedPages = pages;
-      },
-      error: (err) => {
-        console.error('Error loading shared pages:', err);
-      }
-    });
-  }
-
-  sendWorkspaceInvite(): void {
-    const input = this.inviteInput.trim();
-    if (!input) return;
-
-    this.isInviting = true;
-    this.inviteSuccessMessage = '';
-    this.inviteErrorMessage = '';
-
-    this.workspaceService.inviteUser(this.activeWorkspaceId, input, 'Member').subscribe({
-      next: (res) => {
-        this.isInviting = false;
-        this.inviteSuccessMessage = res.message || 'Invitation sent successfully!';
-        this.inviteInput = '';
-      },
-      error: (err) => {
-        this.isInviting = false;
-        this.inviteErrorMessage = err.error?.message || 'Failed to send invitation. Make sure the user exists and is not already a member.';
-      }
-    });
   }
 
   truncate(html: string, length: number): string {

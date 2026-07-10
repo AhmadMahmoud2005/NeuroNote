@@ -16,6 +16,7 @@ public class NeuroNoteDbContext(DbContextOptions<NeuroNoteDbContext> options) : 
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<SharedPage> SharedPages => Set<SharedPage>();
+    public DbSet<TeamTask> TeamTasks => Set<TeamTask>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -214,6 +215,28 @@ public class NeuroNoteDbContext(DbContextOptions<NeuroNoteDbContext> options) : 
                 .WithMany()
                 .HasForeignKey(sp => sp.SharedWithUserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<TeamTask>(entity =>
+        {
+            entity.ToTable("TeamTasks");
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.Title).HasMaxLength(250).IsRequired();
+            entity.Property(t => t.Description).HasMaxLength(1000);
+            entity.Property(t => t.Priority).HasMaxLength(50).HasDefaultValue("Medium");
+            entity.Property(t => t.Complexity).HasMaxLength(50).HasDefaultValue("Medium");
+            entity.Property(t => t.IsCompleted).HasDefaultValue(false);
+            entity.Property(t => t.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            
+            entity.HasOne(t => t.Workspace)
+                .WithMany()
+                .HasForeignKey(t => t.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(t => t.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(t => t.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

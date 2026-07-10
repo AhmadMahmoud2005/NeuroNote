@@ -3,6 +3,7 @@ import { Router, RouterOutlet } from '@angular/router';
 import { NavComponent } from './landing/nav/nav.component';
 import { FooterComponent } from './landing/footer/footer.component';
 import { CommonModule } from '@angular/common';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -14,13 +15,18 @@ import { CommonModule } from '@angular/common';
 export class AppComponent {
   title = 'final-project';
 
-  constructor(public router: Router) {}
-
-  get isAuthPage(): boolean {
-    return this.router.url === '/login' || this.router.url === '/register';
-  }
+  constructor(
+    public readonly router: Router,
+    private readonly authService: AuthService
+  ) {}
 
   get showSiteChrome(): boolean {
-    return !this.isAuthPage && !['/all-pages', '/tasks', '/new-page', '/search', '/settings'].includes(this.router.url);
+    // If the user is logged in, never show the landing page header/footer
+    if (this.authService.isLoggedIn) {
+      return false;
+    }
+    // Only show on root, home and about pages for guests
+    const guestRoutes = ['/', '/home', '/about'];
+    return guestRoutes.includes(this.router.url.split('?')[0]);
   }
 }

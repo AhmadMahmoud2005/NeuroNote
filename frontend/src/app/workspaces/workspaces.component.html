@@ -28,6 +28,7 @@
               </div>
               <div class="ws-card-actions">
                 <button type="button" class="btn-open" (click)="openWorkspace(ws.id)">Open</button>
+                <button type="button" class="btn-edit-link" [routerLink]="['/edit-workspace']" [queryParams]="{ id: ws.id }">Edit</button>
               </div>
             </div>
           </div>

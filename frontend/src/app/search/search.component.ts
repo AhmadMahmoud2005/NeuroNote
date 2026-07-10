@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject, Subscription, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs';
 import { SlideBarComponent } from '../slide-bar/slide-bar.component';
 import { SearchResults, SearchService } from '../services/search.service';
@@ -8,48 +9,60 @@ import { SearchResults, SearchService } from '../services/search.service';
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [CommonModule, FormsModule, SlideBarComponent],
+  imports: [CommonModule, FormsModule, SlideBarComponent, RouterLink],
   templateUrl: './search.component.html',
   styleUrl: './search.component.css'
 })
 export class SearchComponent implements OnInit, OnDestroy {
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
-  activeWorkspaceId = 1;
   query = '';
   isLoading = false;
   recentSearches: string[] = [];
-  results: SearchResults = { notes: [], tasks: [], files: [] };
+  results: SearchResults = { notes: [], tasks: [], workspaces: [] };
 
   private readonly queryChanges = new Subject<string>();
   private querySubscription?: Subscription;
 
-  constructor(private readonly searchService: SearchService) {}
+  constructor(
+    private readonly searchService: SearchService,
+    private readonly route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
-    this.activeWorkspaceId = Number(localStorage.getItem('activeWorkspaceId')) || 1;
     this.recentSearches = this.loadRecentSearches();
     this.querySubscription = this.queryChanges
       .pipe(
         debounceTime(260),
         distinctUntilChanged(),
         tap(() => (this.isLoading = true)),
-        switchMap(query => this.searchService.search(query, this.activeWorkspaceId))
+        switchMap(query => this.searchService.search(query))
       )
-      .subscribe(results => {
-        this.results = results;
-        this.isLoading = false;
+      .subscribe({
+        next: (results) => {
+          this.results = results;
+          this.isLoading = false;
+        },
+        error: (err) => {
+          console.error('Search error:', err);
+          this.isLoading = false;
+        }
       });
 
-    this.queryChanges.next('');
+    // Check query params for initial query 'q'
+    this.route.queryParams.subscribe(params => {
+      const qParam = params['q'] || '';
+      if (qParam) {
+        this.query = qParam;
+        this.queryChanges.next(qParam);
+      } else {
+        this.queryChanges.next('');
+      }
+    });
   }
 
   ngOnDestroy(): void {
     this.querySubscription?.unsubscribe();
-  }
-
-  get pendingTasksCount(): number {
-    return this.results.tasks.filter(task => task.isPending).length;
   }
 
   onQueryChange(value: string): void {
@@ -59,10 +72,7 @@ export class SearchComponent implements OnInit, OnDestroy {
 
   submitSearch(): void {
     const trimmedQuery = this.query.trim();
-
-    if (!trimmedQuery) {
-      return;
-    }
+    if (!trimmedQuery) return;
 
     this.recentSearches = [
       trimmedQuery,
@@ -79,13 +89,24 @@ export class SearchComponent implements OnInit, OnDestroy {
 
   highlight(value: string): string {
     const trimmedQuery = this.query.trim();
-
-    if (!trimmedQuery) {
-      return value;
-    }
+    if (!trimmedQuery) return value;
 
     const escapedQuery = trimmedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return value.replace(new RegExp(`(${escapedQuery})`, 'gi'), '<mark>$1</mark>');
+  }
+
+  getOpenTasksCount(): number {
+    return this.results.tasks.filter(t => !t.isCompleted).length;
+  }
+
+  formatDateOnly(dateStr: string | null): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -100,16 +121,14 @@ export class SearchComponent implements OnInit, OnDestroy {
   }
 
   private get recentKey(): string {
-    return `recentSearches-${this.activeWorkspaceId}`;
+    return 'recentSearches-global';
   }
 
   private loadRecentSearches(): string[] {
     const storedSearches = localStorage.getItem(this.recentKey);
-
     if (storedSearches) {
       try {
         const parsedSearches = JSON.parse(storedSearches) as string[];
-
         if (Array.isArray(parsedSearches)) {
           return parsedSearches;
         }
@@ -117,8 +136,7 @@ export class SearchComponent implements OnInit, OnDestroy {
         localStorage.removeItem(this.recentKey);
       }
     }
-
-    const defaults = ['Project Q4', 'Meeting Notes', 'Design Specs'];
+    const defaults = ['Planning', 'Missions', 'Workspaces'];
     localStorage.setItem(this.recentKey, JSON.stringify(defaults));
     return defaults;
   }

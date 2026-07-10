@@ -6,6 +6,7 @@ import { environment } from '../environment';
 export interface PageResponse {
   id: number;
   workspaceId: number;
+  workspaceName: string;
   parentPageId: number | null;
   createdByUserId: number;
   createdByUsername: string;
@@ -92,6 +93,10 @@ export class PageService {
     return this.http.post<any>(`${this.apiUrl}/invitations/${invitationId}/respond`, {
       accept
     });
+  }
+
+  getAllPages(): Observable<PageResponse[]> {
+    return this.http.get<PageResponse[]>(`${this.apiUrl}/all`);
   }
 }
 

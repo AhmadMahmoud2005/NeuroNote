@@ -277,3 +277,328 @@ h1 {
     align-items: stretch;
   }
 }
+
+.workspace-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 20rem);
+  gap: 1.6rem;
+  align-items: start;
+}
+
+.workspace-notes-column {
+  flex: 1;
+}
+
+.invite-panel {
+  border: 1px solid rgba(100, 116, 139, 0.16);
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.04);
+  padding: 1.45rem;
+}
+
+.invite-panel h2 {
+  color: var(--color-neutral);
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0 0 0.35rem;
+}
+
+.invite-panel p {
+  color: var(--color-ternary);
+  font-size: 0.86rem;
+  font-weight: 650;
+  margin: 0.45rem 0 1.25rem;
+  line-height: 1.4;
+}
+
+.invite-panel input {
+  width: 100%;
+  min-height: 3rem;
+  border: 2px solid rgba(59, 130, 246, 0.75);
+  border-radius: 0.5rem;
+  color: var(--color-neutral);
+  font: inherit;
+  padding: 0 0.85rem;
+  outline: none;
+  background: var(--color-white);
+  transition: var(--transition-smooth);
+}
+
+.invite-panel input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.invite-panel button {
+  width: 100%;
+  min-height: 3rem;
+  border-radius: 0.5rem;
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-family: var(--font-family);
+  font-size: 0.92rem;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  margin-top: 0.85rem;
+  transition: var(--transition-smooth);
+}
+
+.invite-panel button:hover {
+  background: #2563EB;
+}
+
+.invite-panel button:disabled {
+  background: rgba(100, 116, 139, 0.12);
+  color: var(--color-ternary);
+  cursor: not-allowed;
+}
+
+.invite-success {
+  background-color: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #065F46;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.85rem;
+}
+
+.invite-error {
+  background-color: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.85rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+@media (max-width: 1024px) {
+  .workspace-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Topbar Styles matching Home page */
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2.4rem;
+}
+
+.search-bar-placeholder {
+  flex-grow: 1;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.topbar-actions button {
+  font-family: var(--font-family);
+  font-size: 0.85rem;
+  font-weight: 750;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  transition: var(--transition-smooth);
+}
+
+.btn-quick-note {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+}
+
+.btn-quick-note:hover {
+  background: #2563EB;
+}
+
+.btn-quick-task {
+  background: var(--color-secondary);
+  color: var(--color-primary);
+  border: none;
+}
+
+.btn-quick-task:hover {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.icon-button,
+.avatar-button {
+  width: 2.6rem;
+  height: 2.6rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  color: var(--color-neutral);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transition: var(--transition-smooth);
+  border: none;
+  cursor: pointer;
+}
+
+.icon-button:hover,
+.avatar-button:hover {
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.bell-button {
+  position: relative;
+}
+
+.bell-icon {
+  width: 1rem;
+  height: 1.15rem;
+  position: relative;
+  display: block;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 0.65rem 0.65rem 0.25rem 0.25rem;
+}
+
+.bell-icon::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -0.34rem;
+  width: 0.5rem;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.bell-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -0.32rem;
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -0.15rem;
+  right: -0.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--color-white);
+}
+
+.notifications-menu {
+  position: absolute;
+  top: calc(100% + 0.85rem);
+  right: 0;
+  z-index: 20;
+  width: min(22rem, calc(100vw - 2rem));
+  border: 1px solid rgba(100, 116, 139, 0.18);
+  border-radius: 0.65rem;
+  background: var(--color-white);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.14);
+  padding: 0.8rem;
+}
+
+.menu-heading {
+  color: var(--color-neutral);
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 0.25rem 0.35rem 0.65rem;
+  text-align: left;
+}
+
+.notification-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.notification-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  border-radius: 0.5rem;
+  background: var(--color-secondary);
+  padding: 0.8rem;
+  text-align: left;
+}
+
+.notification-item p,
+.empty-state {
+  color: var(--color-ternary);
+  font-size: 0.86rem;
+  font-weight: 650;
+  margin: 0;
+}
+
+.invite-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.invite-actions button {
+  flex: 1;
+  padding: 0.4rem 0.65rem !important;
+  font-size: 0.78rem !important;
+  border-radius: 0.25rem !important;
+  cursor: pointer;
+  border: none;
+  font-weight: 700 !important;
+  transition: var(--transition-smooth);
+}
+
+.btn-accept {
+  background: var(--color-primary) !important;
+  color: var(--color-white) !important;
+}
+
+.btn-accept:hover {
+  background: #2563EB !important;
+}
+
+.btn-decline {
+  background: #EF4444 !important;
+  color: var(--color-white) !important;
+}
+
+.btn-decline:hover {
+  background: #DC2626 !important;
+}
+
+.avatar-button {
+  overflow: hidden;
+  background: var(--color-neutral);
+  color: var(--color-white);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+

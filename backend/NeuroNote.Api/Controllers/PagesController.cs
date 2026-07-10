@@ -21,6 +21,42 @@ public class PagesController : ControllerBase
         _context = context;
     }
 
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllUserPages()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var pages = await _context.Pages
+            .Include(p => p.Workspace)
+            .Include(p => p.CreatedByUser)
+            .Where(p => !p.IsArchived && (p.Workspace.OwnerUserId == userId || p.Workspace.Members.Any(m => m.UserId == userId)))
+            .OrderByDescending(p => p.UpdatedAt ?? p.CreatedAt)
+            .Select(p => new PageResponseDto
+            {
+                Id = p.Id,
+                WorkspaceId = p.WorkspaceId,
+                WorkspaceName = p.Workspace.Name,
+                ParentPageId = p.ParentPageId,
+                CreatedByUserId = p.CreatedByUserId,
+                CreatedByUsername = p.CreatedByUser.Username,
+                Title = p.Title,
+                Slug = p.Slug,
+                Content = p.Content,
+                PlainText = p.PlainText,
+                IsArchived = p.IsArchived,
+                SortOrder = p.SortOrder,
+                CreatedAt = p.CreatedAt.AddHours(3), // Add Cairo timezone offset (UTC+3)
+                UpdatedAt = p.UpdatedAt.HasValue ? p.UpdatedAt.Value.AddHours(3) : null
+            })
+            .ToListAsync();
+
+        return Ok(pages);
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetPages([FromQuery] int workspaceId)
     {
@@ -38,6 +74,8 @@ public class PagesController : ControllerBase
             return Forbid();
 
         var pages = await _context.Pages
+            .Include(p => p.Workspace)
+            .Include(p => p.CreatedByUser)
             .Where(p => p.WorkspaceId == workspaceId && !p.IsArchived)
             .OrderBy(p => p.SortOrder)
             .ThenByDescending(p => p.CreatedAt)
@@ -45,6 +83,7 @@ public class PagesController : ControllerBase
             {
                 Id = p.Id,
                 WorkspaceId = p.WorkspaceId,
+                WorkspaceName = p.Workspace.Name,
                 ParentPageId = p.ParentPageId,
                 CreatedByUserId = p.CreatedByUserId,
                 CreatedByUsername = p.CreatedByUser.Username,
@@ -76,10 +115,12 @@ public class PagesController : ControllerBase
             .Where(sp => sp.SharedWithUserId == userId && sp.Status == "Accepted")
             .Include(sp => sp.Page)
             .ThenInclude(p => p.CreatedByUser)
+            .Include(sp => sp.Page.Workspace)
             .Select(sp => new PageResponseDto
             {
                 Id = sp.Page.Id,
                 WorkspaceId = sp.Page.WorkspaceId,
+                WorkspaceName = sp.Page.Workspace.Name,
                 ParentPageId = sp.Page.ParentPageId,
                 CreatedByUserId = sp.Page.CreatedByUserId,
                 CreatedByUsername = sp.Page.CreatedByUser.Username,
@@ -173,6 +214,7 @@ public class PagesController : ControllerBase
 
         var page = await _context.Pages
             .Include(p => p.CreatedByUser)
+            .Include(p => p.Workspace)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (page == null)
@@ -193,6 +235,7 @@ public class PagesController : ControllerBase
         {
             Id = page.Id,
             WorkspaceId = page.WorkspaceId,
+            WorkspaceName = page.Workspace.Name,
             ParentPageId = page.ParentPageId,
             CreatedByUserId = page.CreatedByUserId,
             CreatedByUsername = page.CreatedByUser.Username,
@@ -247,12 +290,14 @@ public class PagesController : ControllerBase
 
         var createdPage = await _context.Pages
             .Include(p => p.CreatedByUser)
+            .Include(p => p.Workspace)
             .FirstAsync(p => p.Id == page.Id);
 
         return CreatedAtAction(nameof(GetPage), new { id = page.Id }, new PageResponseDto
         {
             Id = createdPage.Id,
             WorkspaceId = createdPage.WorkspaceId,
+            WorkspaceName = createdPage.Workspace.Name,
             ParentPageId = createdPage.ParentPageId,
             CreatedByUserId = createdPage.CreatedByUserId,
             CreatedByUsername = createdPage.CreatedByUser.Username,
@@ -281,6 +326,7 @@ public class PagesController : ControllerBase
 
         var page = await _context.Pages
             .Include(p => p.CreatedByUser)
+            .Include(p => p.Workspace)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (page == null)
@@ -310,6 +356,7 @@ public class PagesController : ControllerBase
         {
             Id = page.Id,
             WorkspaceId = page.WorkspaceId,
+            WorkspaceName = page.Workspace.Name,
             ParentPageId = page.ParentPageId,
             CreatedByUserId = page.CreatedByUserId,
             CreatedByUsername = page.CreatedByUser.Username,

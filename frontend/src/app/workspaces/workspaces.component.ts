@@ -17,6 +17,7 @@ export class WorkspacesComponent implements OnInit {
   personalWorkspaces: WorkspaceResponse[] = [];
   sharedWorkspaces: WorkspaceResponse[] = [];
   isLoading = true;
+  currentUserId = 0;
 
   // Create Workspace Form States
   name = '';
@@ -32,18 +33,16 @@ export class WorkspacesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.currentUserId = this.authService.currentUser?.userId || 0;
     this.loadWorkspaces();
   }
 
   loadWorkspaces(): void {
     this.isLoading = true;
-    const currentUser = this.authService.currentUser;
-    const currentUserId = currentUser ? currentUser.userId : 0;
-
     this.workspaceService.getWorkspaces().subscribe({
       next: (workspaces) => {
-        this.personalWorkspaces = workspaces.filter(w => w.ownerUserId === currentUserId);
-        this.sharedWorkspaces = workspaces.filter(w => w.ownerUserId !== currentUserId);
+        this.personalWorkspaces = workspaces.filter(w => w.ownerUserId === this.currentUserId);
+        this.sharedWorkspaces = workspaces.filter(w => w.ownerUserId !== this.currentUserId);
         this.isLoading = false;
       },
       error: (err) => {
@@ -55,7 +54,7 @@ export class WorkspacesComponent implements OnInit {
 
   openWorkspace(workspaceId: number): void {
     localStorage.setItem('activeWorkspaceId', String(workspaceId));
-    this.router.navigate(['/all-pages']).then(() => {
+    this.router.navigate(['/workspace-detail'], { queryParams: { id: workspaceId } }).then(() => {
       window.location.reload();
     });
   }

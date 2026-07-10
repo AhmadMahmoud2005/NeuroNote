@@ -123,6 +123,12 @@ export class SettingsComponent implements OnInit {
     document.body.classList.toggle('compact-layout', this.isCompactLayout);
   }
 
+  onLogout(): void {
+    if (confirm('Are you sure you want to log out?')) {
+      this.authService.logout();
+    }
+  }
+
   private applyTheme(): void {
     document.body.classList.toggle('dark-theme', this.isDarkMode);
     document.body.classList.toggle('compact-layout', this.isCompactLayout);

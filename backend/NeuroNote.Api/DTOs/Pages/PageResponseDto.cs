@@ -4,6 +4,7 @@ public class PageResponseDto
 {
     public int Id { get; set; }
     public int WorkspaceId { get; set; }
+    public string WorkspaceName { get; set; } = string.Empty;
     public int? ParentPageId { get; set; }
     public int CreatedByUserId { get; set; }
     public string CreatedByUsername { get; set; } = string.Empty;
