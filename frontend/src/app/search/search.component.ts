@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, Subscription, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs';
 import { SlideBarComponent } from '../slide-bar/slide-bar.component';
-import { SearchResults, SearchService } from '../services/search.service';
+import { SearchNote, SearchResults, SearchService, SearchWorkspace } from '../services/search.service';
+import { WorkspaceResponse, WorkspaceService } from '../services/workspace.service';
 
 @Component({
   selector: 'app-search',
@@ -20,23 +21,46 @@ export class SearchComponent implements OnInit, OnDestroy {
   isLoading = false;
   recentSearches: string[] = [];
   results: SearchResults = { notes: [], tasks: [], workspaces: [] };
+  workspaces: WorkspaceResponse[] = [];
+  selectedWorkspaceId: number | null = null;
 
-  private readonly queryChanges = new Subject<string>();
+  // Pagination state
+  notesPage = 1;
+  notesPerPage = 5;
+  workspacesPage = 1;
+  workspacesPerPage = 4;
+
+  private readonly queryChanges = new Subject<{ q: string; wsId: number | null }>();
   private querySubscription?: Subscription;
 
   constructor(
     private readonly searchService: SearchService,
-    private readonly route: ActivatedRoute
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly workspaceService: WorkspaceService
   ) {}
 
   ngOnInit(): void {
     this.recentSearches = this.loadRecentSearches();
+
+    // Fetch workspaces for the filter dropdown
+    this.workspaceService.getWorkspaces().subscribe({
+      next: (workspaces) => {
+        this.workspaces = workspaces;
+      },
+      error: (err) => console.error('Error loading workspaces for filter:', err)
+    });
+
     this.querySubscription = this.queryChanges
       .pipe(
         debounceTime(260),
-        distinctUntilChanged(),
-        tap(() => (this.isLoading = true)),
-        switchMap(query => this.searchService.search(query))
+        distinctUntilChanged((prev, curr) => prev.q === curr.q && prev.wsId === curr.wsId),
+        tap(() => {
+          this.isLoading = true;
+          this.notesPage = 1;
+          this.workspacesPage = 1;
+        }),
+        switchMap(change => this.searchService.search(change.q, change.wsId))
       )
       .subscribe({
         next: (results) => {
@@ -49,15 +73,13 @@ export class SearchComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Check query params for initial query 'q'
+    // Check query params for initial query 'q' and 'workspaceId'
     this.route.queryParams.subscribe(params => {
       const qParam = params['q'] || '';
-      if (qParam) {
-        this.query = qParam;
-        this.queryChanges.next(qParam);
-      } else {
-        this.queryChanges.next('');
-      }
+      const wsParam = params['workspaceId'] ? parseInt(params['workspaceId']) : null;
+      this.query = qParam;
+      this.selectedWorkspaceId = wsParam;
+      this.queryChanges.next({ q: qParam, wsId: wsParam });
     });
   }
 
@@ -67,7 +89,11 @@ export class SearchComponent implements OnInit, OnDestroy {
 
   onQueryChange(value: string): void {
     this.query = value;
-    this.queryChanges.next(value);
+    this.queryChanges.next({ q: value, wsId: this.selectedWorkspaceId });
+  }
+
+  onFilterChange(): void {
+    this.submitSearch();
   }
 
   submitSearch(): void {
@@ -79,12 +105,17 @@ export class SearchComponent implements OnInit, OnDestroy {
       ...this.recentSearches.filter(search => search.toLowerCase() !== trimmedQuery.toLowerCase())
     ].slice(0, 5);
     localStorage.setItem(this.recentKey, JSON.stringify(this.recentSearches));
-    this.queryChanges.next(trimmedQuery);
+
+    const queryParams: any = { q: trimmedQuery };
+    if (this.selectedWorkspaceId) {
+      queryParams.workspaceId = this.selectedWorkspaceId;
+    }
+    this.router.navigate(['/search'], { queryParams });
   }
 
   useRecentSearch(search: string): void {
     this.query = search;
-    this.queryChanges.next(search);
+    this.submitSearch();
   }
 
   highlight(value: string): string {
@@ -107,6 +138,33 @@ export class SearchComponent implements OnInit, OnDestroy {
       month: 'short',
       day: 'numeric'
     });
+  }
+
+  // Pagination getters
+  get paginatedNotes(): SearchNote[] {
+    const startIndex = (this.notesPage - 1) * this.notesPerPage;
+    return this.results.notes.slice(startIndex, startIndex + this.notesPerPage);
+  }
+
+  get paginatedWorkspaces(): SearchWorkspace[] {
+    const startIndex = (this.workspacesPage - 1) * this.workspacesPerPage;
+    return this.results.workspaces.slice(startIndex, startIndex + this.workspacesPerPage);
+  }
+
+  get notesPageCount(): number {
+    return Math.ceil(this.results.notes.length / this.notesPerPage);
+  }
+
+  get workspacesPageCount(): number {
+    return Math.ceil(this.results.workspaces.length / this.workspacesPerPage);
+  }
+
+  get notesPageNumbers(): number[] {
+    return Array.from({ length: this.notesPageCount }, (_, i) => i + 1);
+  }
+
+  get workspacesPageNumbers(): number[] {
+    return Array.from({ length: this.workspacesPageCount }, (_, i) => i + 1);
   }
 
   @HostListener('document:keydown', ['$event'])

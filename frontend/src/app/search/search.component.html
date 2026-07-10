@@ -3,13 +3,13 @@
 
   <section class="search-page">
     <header class="search-header">
-      <form class="search-box" (ngSubmit)="submitSearch()" style="position: relative;">
-        <span class="search-icon-wrapper" aria-hidden="true" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); display: flex; align-items: center; color: var(--color-ternary); pointer-events: none;">
+      <form class="search-box" (ngSubmit)="submitSearch()" style="position: relative; display: flex; align-items: center; gap: 0.75rem;">
+        <button type="submit" class="search-icon-btn" aria-label="Search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); display: flex; align-items: center; color: var(--color-ternary); background: none; border: none; padding: 0; cursor: pointer;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-        </span>
+        </button>
         <input
           #searchInput
           type="search"
@@ -18,9 +18,22 @@
           [(ngModel)]="query"
           (input)="onQueryChange(query)"
           (keydown.enter)="submitSearch(); $event.preventDefault();"
-          style="padding-left: 2.85rem;"
+          style="padding-left: 2.85rem; flex-grow: 1;"
         />
-        <kbd>/</kbd>
+        
+        <select 
+          name="workspaceId" 
+          [(ngModel)]="selectedWorkspaceId" 
+          (change)="onFilterChange()" 
+          style="height: 2.2rem; font-size: 0.85rem; border-radius: 0.35rem; border: 1px solid rgba(100, 116, 139, 0.2); background: var(--color-white); color: var(--color-neutral); font-weight: 600; padding: 0 0.5rem; outline: none; cursor: pointer; max-width: 10rem;"
+        >
+          <option [ngValue]="null">All Workspaces</option>
+          <option *ngFor="let ws of workspaces" [ngValue]="ws.id">
+            {{ ws.name }}
+          </option>
+        </select>
+
+        <kbd style="margin-left: 0.25rem;">/</kbd>
       </form>
 
       <div class="recent-row">
@@ -55,7 +68,7 @@
         </div>
 
         <div class="notes-list">
-          <article *ngFor="let note of results.notes" class="note-result" [routerLink]="['/new-page']" [queryParams]="{ id: note.id }">
+          <article *ngFor="let note of paginatedNotes" class="note-result" [routerLink]="['/new-page']" [queryParams]="{ id: note.id }">
             <div class="note-result-content">
               <span class="note-ws-tag">{{ note.workspaceName }}</span>
               <h3 [innerHTML]="highlight(note.title)"></h3>
@@ -65,6 +78,16 @@
           </article>
 
           <p *ngIf="!isLoading && !results.notes.length" class="empty-line">No matching notes.</p>
+
+          <!-- Notes Pagination -->
+          <div class="pagination" *ngIf="notesPageCount > 1">
+            <button *ngFor="let p of notesPageNumbers" 
+                    [class.active]="p === notesPage" 
+                    (click)="notesPage = p"
+                    type="button">
+              {{ p }}
+            </button>
+          </div>
         </div>
 
         <!-- Workspaces Section -->
@@ -84,7 +107,7 @@
         </div>
 
         <div class="workspaces-search-grid">
-          <article *ngFor="let ws of results.workspaces" class="ws-search-card" [routerLink]="['/workspace-detail']" [queryParams]="{ id: ws.id }">
+          <article *ngFor="let ws of paginatedWorkspaces" class="ws-search-card" [routerLink]="['/workspace-detail']" [queryParams]="{ id: ws.id }">
             <div class="ws-search-card-header">
               <span class="ws-bullet-indicator">•</span>
               <h3 [innerHTML]="highlight(ws.name)"></h3>
@@ -96,6 +119,16 @@
           </article>
 
           <p *ngIf="!isLoading && !results.workspaces.length" class="empty-line" style="grid-column: 1 / -1;">No matching workspaces.</p>
+        </div>
+
+        <!-- Workspaces Pagination -->
+        <div class="pagination" *ngIf="workspacesPageCount > 1" style="margin-top: 1.25rem;">
+          <button *ngFor="let p of workspacesPageNumbers" 
+                  [class.active]="p === workspacesPage" 
+                  (click)="workspacesPage = p"
+                  type="button">
+            {{ p }}
+          </button>
         </div>
       </section>
 

@@ -20,6 +20,7 @@ export class TasksComponent implements OnInit {
   sortBy = 'createdAt';
   sortOrder = 'desc';
   keepCompletedAtBottom = true;
+  searchQuery = '';
 
   newTask = {
     title: '',
@@ -109,8 +110,18 @@ export class TasksComponent implements OnInit {
     const priorityMap: { [key: string]: number } = { 'Low': 1, 'Medium': 2, 'High': 3 };
     const complexityMap: { [key: string]: number } = { 'Easy': 1, 'Medium': 2, 'Hard': 3 };
 
+    // Filter tasks by searchQuery if present
+    let filtered = this.tasks;
+    const q = this.searchQuery.trim().toLowerCase();
+    if (q) {
+      filtered = filtered.filter(t => 
+        t.title.toLowerCase().includes(q) || 
+        (t.description && t.description.toLowerCase().includes(q))
+      );
+    }
+
     // 1. Sort all tasks based on parameters
-    const sorted = [...this.tasks].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
       let comparison = 0;
       if (this.sortBy === 'createdAt') {
         comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();

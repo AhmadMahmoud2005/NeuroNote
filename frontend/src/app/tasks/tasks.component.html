@@ -104,6 +104,22 @@
           <span>{{ tasks.length }} total</span>
         </div>
 
+        <!-- Search bar for missions -->
+        <div class="missions-search-container" style="position: relative; margin-bottom: 1.25rem; width: 100%;">
+          <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--color-ternary); display: flex; pointer-events: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input 
+            type="text" 
+            placeholder="Search missions..." 
+            [(ngModel)]="searchQuery"
+            style="padding-left: 2.2rem; min-height: 2.2rem; border-radius: 0.35rem; border: 1px solid rgba(100, 116, 139, 0.2); outline: none; font-size: 0.85rem; width: 100%; background: var(--color-secondary); color: var(--color-neutral);"
+          />
+        </div>
+
         <div *ngIf="tasks.length; else emptyTasks" class="task-list">
           <article
             *ngFor="let task of getSortedTasks()"

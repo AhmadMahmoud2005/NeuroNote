@@ -28,6 +28,14 @@ export interface WorkspaceInvitation {
   createdAt: string;
 }
 
+export interface WorkspaceMember {
+  userId: number;
+  username: string;
+  email: string;
+  role: string;
+  joinedAt: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class WorkspaceService {
   private apiUrl = `${environment.apiUrl}/workspaces`;
@@ -56,6 +64,10 @@ export class WorkspaceService {
 
   getInvitations(): Observable<WorkspaceInvitation[]> {
     return this.http.get<WorkspaceInvitation[]>(`${this.apiUrl}/invitations`);
+  }
+
+  getWorkspaceMembers(workspaceId: number): Observable<WorkspaceMember[]> {
+    return this.http.get<WorkspaceMember[]>(`${this.apiUrl}/${workspaceId}/members`);
   }
 
   inviteUser(workspaceId: number, usernameOrEmail: string, role: string): Observable<any> {

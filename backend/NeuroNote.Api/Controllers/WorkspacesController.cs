@@ -83,6 +83,60 @@ public class WorkspacesController : ControllerBase
         });
     }
 
+    [HttpGet("{id}/members")]
+    public async Task<IActionResult> GetWorkspaceMembers(int id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var workspace = await _context.Workspaces
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (workspace == null)
+            return NotFound(new { message = "Workspace not found." });
+
+        var hasAccess = workspace.OwnerUserId == userId || workspace.Members.Any(m => m.UserId == userId);
+        if (!hasAccess)
+            return Forbid();
+
+        var owner = await _context.Users
+            .Where(u => u.Id == workspace.OwnerUserId)
+            .Select(u => new WorkspaceMemberDto
+            {
+                UserId = u.Id,
+                Username = u.Username,
+                Email = u.Email,
+                Role = "Owner",
+                JoinedAt = workspace.CreatedAt.AddHours(3) // Cairo timezone offset
+            })
+            .FirstOrDefaultAsync();
+
+        var members = await _context.WorkspaceMembers
+            .Include(m => m.User)
+            .Where(m => m.WorkspaceId == id)
+            .Select(m => new WorkspaceMemberDto
+            {
+                UserId = m.UserId,
+                Username = m.User.Username,
+                Email = m.User.Email,
+                Role = m.MemberRole,
+                JoinedAt = m.JoinedAt.AddHours(3) // Cairo timezone offset
+            })
+            .ToListAsync();
+
+        var allCollaborators = new List<WorkspaceMemberDto>();
+        if (owner != null)
+        {
+            allCollaborators.Add(owner);
+        }
+        allCollaborators.AddRange(members);
+
+        return Ok(allCollaborators);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateWorkspace([FromBody] CreateWorkspaceDto dto)
     {

@@ -38,7 +38,11 @@ export class SearchService {
 
   constructor(private http: HttpClient) {}
 
-  search(query: string): Observable<SearchResults> {
-    return this.http.get<SearchResults>(`${this.apiUrl}?query=${encodeURIComponent(query)}`);
+  search(query: string, workspaceId?: number | null): Observable<SearchResults> {
+    let url = `${this.apiUrl}?q=${encodeURIComponent(query)}`;
+    if (workspaceId) {
+      url += `&workspaceId=${workspaceId}`;
+    }
+    return this.http.get<SearchResults>(url);
   }
 }

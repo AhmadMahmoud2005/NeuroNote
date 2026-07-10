@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SlideBarComponent } from '../slide-bar/slide-bar.component';
-import { WorkspaceService, WorkspaceResponse, WorkspaceInvitation } from '../services/workspace.service';
+import { WorkspaceService, WorkspaceResponse, WorkspaceInvitation, WorkspaceMember } from '../services/workspace.service';
 import { PageService, PageResponse, PageInvitation } from '../services/page.service';
 import { AuthService } from '../services/auth.service';
 import { AuthUser } from '../models/auth.model';
@@ -38,11 +38,37 @@ export class WorkspaceDetailComponent implements OnInit {
   // Search in Topbar
   topbarQuery = '';
 
+  // Collaborators display state
+  showCollaborators = false;
+  collaborators: WorkspaceMember[] = [];
+  loadingCollaborators = false;
+
   onTopbarSearch(): void {
     const q = this.topbarQuery.trim();
     if (q) {
-      this.router.navigate(['/search'], { queryParams: { q } });
+      this.router.navigate(['/search'], { queryParams: { q, workspaceId: this.workspaceId } });
     }
+  }
+
+  toggleCollaborators(): void {
+    this.showCollaborators = !this.showCollaborators;
+    if (this.showCollaborators) {
+      this.loadCollaborators();
+    }
+  }
+
+  loadCollaborators(): void {
+    this.loadingCollaborators = true;
+    this.workspaceService.getWorkspaceMembers(this.workspaceId).subscribe({
+      next: (members) => {
+        this.collaborators = members;
+        this.loadingCollaborators = false;
+      },
+      error: (err) => {
+        console.error('Error loading collaborators:', err);
+        this.loadingCollaborators = false;
+      }
+    });
   }
 
   constructor(

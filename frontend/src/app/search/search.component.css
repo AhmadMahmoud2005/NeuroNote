@@ -461,3 +461,38 @@ kbd {
     margin-top: 0.5rem;
   }
 }
+
+/* Pagination Controls Styling */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.pagination button {
+  border: 1px solid rgba(100, 116, 139, 0.18);
+  border-radius: 0.35rem;
+  background: var(--color-white);
+  color: var(--color-ternary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  width: 2.2rem;
+  height: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.pagination button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pagination button.active {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
