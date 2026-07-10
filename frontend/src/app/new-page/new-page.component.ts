@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Observable, Subject } from 'rxjs';
 import { SlideBarComponent } from '../slide-bar/slide-bar.component';
-import { PageService } from '../services/page.service';
+import { PageService, PageInvitation } from '../services/page.service';
 import { AuthService } from '../services/auth.service';
+import { WorkspaceService, WorkspaceInvitation } from '../services/workspace.service';
 import { AuthUser } from '../models/auth.model';
 
 interface JsonSpan {
@@ -33,6 +34,7 @@ interface JsonBlock {
 export class NewPageComponent implements OnInit, OnDestroy {
   @ViewChild('editor') editor?: ElementRef<HTMLDivElement>;
   @ViewChild('imageInput') imageInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('inlinePhotoInput') inlinePhotoInput?: ElementRef<HTMLInputElement>;
 
   activeWorkspaceId = 1;
   pageId: number | null = null;
@@ -56,6 +58,9 @@ export class NewPageComponent implements OnInit, OnDestroy {
   showLeaveWarning = false;
   private leaveSubject = new Subject<boolean>();
 
+  // Custom Delete Confirm State
+  showDeleteConfirm = false;
+
   // Share Modal States
   showShareModal = false;
   shareUsernameOrEmail = '';
@@ -67,9 +72,14 @@ export class NewPageComponent implements OnInit, OnDestroy {
   pageOwnerUsername = '';
   isOwnerOfPage = true;
 
-  // Available Colors
+  // Notifications State
+  isNotificationsOpen = false;
+  pendingInvitations: WorkspaceInvitation[] = [];
+  pendingPageInvitations: PageInvitation[] = [];
+
+  // Available Colors (using var(--color-neutral) as default for light/dark mode adaptability)
   readonly textColors = [
-    { name: 'Default', value: '#0F172A' },
+    { name: 'Default', value: 'var(--color-neutral)' },
     { name: 'Blue', value: '#3B82F6' },
     { name: 'Red', value: '#EF4444' },
     { name: 'Green', value: '#10B981' },
@@ -89,12 +99,14 @@ export class NewPageComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly pageService: PageService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly workspaceService: WorkspaceService
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.currentUser;
     this.activeWorkspaceId = Number(localStorage.getItem('activeWorkspaceId')) || 1;
+    this.loadInvitations();
 
     this.route.queryParams.subscribe(params => {
       const id = params['id'];
@@ -266,18 +278,27 @@ export class NewPageComponent implements OnInit, OnDestroy {
 
   deletePage(): void {
     if (!this.pageId || !this.isOwnerOfPage) return;
-    if (confirm(`Are you sure you want to delete note "${this.title}"?`)) {
-      this.pageService.deletePage(this.pageId).subscribe({
-        next: () => {
-          this.isDirty = false;
-          this.router.navigate(['/workspace-detail'], { queryParams: { id: this.activeWorkspaceId } });
-        },
-        error: (err) => {
-          console.error('Error deleting page:', err);
-          alert('Failed to delete page. Please try again.');
-        }
-      });
-    }
+    this.showDeleteConfirm = true;
+  }
+
+  confirmDeletePage(): void {
+    if (!this.pageId) return;
+    this.pageService.deletePage(this.pageId).subscribe({
+      next: () => {
+        this.isDirty = false;
+        this.showDeleteConfirm = false;
+        this.router.navigate(['/workspace-detail'], { queryParams: { id: this.activeWorkspaceId } });
+      },
+      error: (err) => {
+        console.error('Error deleting page:', err);
+        this.showDeleteConfirm = false;
+        alert('Failed to delete page. Please try again.');
+      }
+    });
+  }
+
+  closeDeleteModal(): void {
+    this.showDeleteConfirm = false;
   }
 
   // Routing Leave Warning Logic
@@ -372,31 +393,105 @@ export class NewPageComponent implements OnInit, OnDestroy {
     this.isDirty = true;
   }
 
+  getDefaultSizeForBlockType(tag: string): string {
+    switch (tag.toLowerCase()) {
+      case 'h1': return '30px';
+      case 'h2': return '24px';
+      case 'h3': return '20px';
+      default: return '16px';
+    }
+  }
+
   setBlockType(tag: string) {
     this.restoreSelection();
-    document.execCommand('formatBlock', false, tag);
     this.showHeadingDropdown = false;
     this.isDirty = true;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+
+    // Walk up the DOM to find the nearest block-level ancestor inside the editor
+    let blockEl: HTMLElement | null = range.startContainer as HTMLElement;
+    if (blockEl.nodeType === Node.TEXT_NODE) {
+      blockEl = blockEl.parentElement;
+    }
+    const editorEl = this.editor?.nativeElement;
+    // Traverse up until we hit a direct child of the editor
+    while (blockEl && blockEl.parentElement !== editorEl) {
+      blockEl = blockEl.parentElement;
+    }
+
+    if (!blockEl || !editorEl) {
+      // Fallback to execCommand if no suitable block found
+      document.execCommand('formatBlock', false, tag);
+      return;
+    }
+
+    const defaultSizes: { [key: string]: string } = {
+      'h1': '30px',
+      'h2': '24px',
+      'h3': '20px',
+      'p': '16px',
+      'div': '16px'
+    };
+    const oldDefaultSize = defaultSizes[blockEl.tagName.toLowerCase()] || '16px';
+    const newDefaultSize = defaultSizes[tag.toLowerCase()] || '16px';
+
+    // Create new element with target tag, preserving all inner content
+    const newEl = document.createElement(tag);
+    // Move all children from old block to the new element
+    while (blockEl.firstChild) {
+      newEl.appendChild(blockEl.firstChild);
+    }
+
+    // Find all span elements inside newEl and update their size if they used old default size
+    const spans = newEl.querySelectorAll('span');
+    spans.forEach(span => {
+      const currentSize = span.style.fontSize;
+      if (!currentSize || currentSize === oldDefaultSize) {
+        span.style.fontSize = newDefaultSize;
+      }
+    });
+
+    // Replace old element with the new one in the DOM
+    editorEl.replaceChild(newEl, blockEl);
+
+    // Restore selection inside the new element
+    const newRange = document.createRange();
+    newRange.selectNodeContents(newEl);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+    this.savedRange = newRange;
   }
 
   // Custom Font Size controls
   increaseSize() {
+    // Keep toolbar visible during interaction
+    this.isInteractingWithToolbar = true;
     this.restoreSelection();
     this.currentFontSize = Math.min(72, this.currentFontSize + 2);
     this.applyFontSize();
+    setTimeout(() => { this.isInteractingWithToolbar = false; }, 300);
   }
 
   decreaseSize() {
+    // Keep toolbar visible during interaction
+    this.isInteractingWithToolbar = true;
     this.restoreSelection();
     this.currentFontSize = Math.max(8, this.currentFontSize - 2);
     this.applyFontSize();
+    setTimeout(() => { this.isInteractingWithToolbar = false; }, 300);
   }
 
   onFontSizeChange() {
+    this.isInteractingWithToolbar = true;
     this.restoreSelection();
     if (this.currentFontSize < 8) this.currentFontSize = 8;
     if (this.currentFontSize > 72) this.currentFontSize = 72;
     this.applyFontSize();
+    setTimeout(() => { this.isInteractingWithToolbar = false; }, 300);
   }
 
   applyFontSize() {
@@ -436,26 +531,19 @@ export class NewPageComponent implements OnInit, OnDestroy {
       range.insertNode(span);
     }
 
+    // Re-select the span so the toolbar sees a valid selection and stays visible
+    const newRange = document.createRange();
+    newRange.selectNodeContents(span);
     selection.removeAllRanges();
+    selection.addRange(newRange);
+    this.savedRange = newRange.cloneRange();
+    this.showToolbar = true;
+
     this.isDirty = true;
   }
 
   openImagePicker(): void {
     this.imageInput?.nativeElement.click();
-  }
-
-  addImage(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.imageDataUrl = String(reader.result);
-      this.isDirty = true;
-    };
-    reader.readAsDataURL(file);
-    input.value = '';
   }
 
   removeImage(): void {
@@ -499,6 +587,8 @@ export class NewPageComponent implements OnInit, OnDestroy {
   }
 
   resetFormat() {
+    // Lock out onSelectionChange so it cannot overwrite our explicit size=16
+    this.isInteractingWithToolbar = true;
     this.restoreSelection();
     document.execCommand('removeFormat');
     const selection = window.getSelection();
@@ -506,7 +596,7 @@ export class NewPageComponent implements OnInit, OnDestroy {
       const range = selection.getRangeAt(0);
       const span = document.createElement('span');
       span.style.fontSize = '16px';
-      span.style.color = '#0F172A';
+      span.style.color = 'var(--color-neutral)';
       span.style.fontWeight = 'normal';
       span.style.fontStyle = 'normal';
       span.style.textDecoration = 'none';
@@ -518,19 +608,157 @@ export class NewPageComponent implements OnInit, OnDestroy {
         span.appendChild(content);
         range.insertNode(span);
       }
+      // Explicitly set the displayed size to 16 BEFORE releasing the lock
       this.currentFontSize = 16;
 
       const newRange = document.createRange();
       newRange.selectNode(span);
       selection.removeAllRanges();
       selection.addRange(newRange);
-      this.savedRange = newRange;
+      this.savedRange = newRange.cloneRange();
+      this.showToolbar = true;
     }
     this.isDirty = true;
+    // Release lock after a tick so Angular has rendered the new value
+    setTimeout(() => { this.isInteractingWithToolbar = false; }, 100);
+  }
+
+  // Inline and Cover Image Picker Actions
+  openInlineImagePicker(): void {
+    this.inlinePhotoInput?.nativeElement.click();
+  }
+
+  addInlineImage(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+      alert('Photo must be 1MB max');
+      input.value = '';
+      return;
+    }
+
+    this.isDirty = true;
+    this.lastSavedLabel = 'Uploading image...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.pageService.uploadImage(formData).subscribe({
+      next: (res: any) => {
+        if (this.editor && res.url) {
+          const imgHtml = `<figure class="editor-inline-image" style="margin: 1rem 0; text-align: center;"><img src="${res.url}" style="max-width: 100%; max-height: 400px; border-radius: 0.5rem; display: inline-block;" /></figure><p><br></p>`;
+          this.editor.nativeElement.innerHTML += imgHtml;
+          this.lastSavedLabel = 'Image uploaded successfully';
+        }
+        input.value = '';
+      },
+      error: (err) => {
+        console.error('Error uploading image:', err);
+        this.lastSavedLabel = 'Failed to upload image';
+        alert('Failed to upload image. Please try again.');
+        input.value = '';
+      }
+    });
+  }
+
+  addImage(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+      alert('Photo must be 1MB max');
+      input.value = '';
+      return;
+    }
+
+    this.isDirty = true;
+    this.lastSavedLabel = 'Uploading cover image...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.pageService.uploadImage(formData).subscribe({
+      next: (res: any) => {
+        if (res.url) {
+          this.imageDataUrl = res.url;
+          this.lastSavedLabel = 'Cover image uploaded';
+        }
+        input.value = '';
+      },
+      error: (err) => {
+        console.error('Error uploading cover image:', err);
+        this.lastSavedLabel = 'Failed to upload cover image';
+        alert('Failed to upload cover image. Please try again.');
+        input.value = '';
+      }
+    });
+  }
+
+  // Notifications bell actions
+  toggleNotifications(): void {
+    this.isNotificationsOpen = !this.isNotificationsOpen;
+  }
+
+  loadInvitations(): void {
+    this.workspaceService.getInvitations().subscribe({
+      next: (invitations) => {
+        this.pendingInvitations = invitations;
+      },
+      error: (err) => {
+        console.error('Error loading workspace invitations:', err);
+      }
+    });
+
+    this.pageService.getPageInvitations().subscribe({
+      next: (invitations) => {
+        this.pendingPageInvitations = invitations;
+      },
+      error: (err) => {
+        console.error('Error loading page invitations:', err);
+      }
+    });
+  }
+
+  respondInvitation(invitation: WorkspaceInvitation, accept: boolean): void {
+    this.workspaceService.respondToInvitation(invitation.id, accept).subscribe({
+      next: () => {
+        this.loadInvitations();
+        if (accept) {
+          localStorage.setItem('activeWorkspaceId', String(invitation.workspaceId));
+          window.location.reload();
+        }
+      },
+      error: (err) => {
+        console.error('Error responding to workspace invitation:', err);
+      }
+    });
+  }
+
+  respondPageInvitation(invitation: PageInvitation, accept: boolean): void {
+    this.pageService.respondToPageInvitation(invitation.id, accept).subscribe({
+      next: () => {
+        this.loadInvitations();
+      },
+      error: (err) => {
+        console.error('Error responding to page invitation:', err);
+      }
+    });
   }
 
   private htmlToJson(element: HTMLElement): string {
     const blocks: JsonBlock[] = [];
+
+    // Prepend cover photo block if it is present!
+    if (this.imageDataUrl) {
+      blocks.push({
+        type: 'cover',
+        spans: [{ text: this.imageDataUrl, size: '16px' }]
+      });
+    }
+
     const children = element.childNodes;
 
     for (let i = 0; i < children.length; i++) {
@@ -551,21 +779,42 @@ export class NewPageComponent implements OnInit, OnDestroy {
           continue;
         }
 
-        if (['p', 'div', 'h2', 'h1', 'h3', 'ul', 'ol', 'li'].includes(tag)) {
-          const text = el.innerText || '';
-          const hasBr = el.querySelector('br') !== null;
-
-          if (!text.replace(/\u200B/g, '').trim() && (hasBr || el.innerHTML === '')) {
+        if (tag === 'img') {
+          blocks.push({
+            type: 'img',
+            spans: [{ text: el.getAttribute('src') || '', size: '16px' }]
+          });
+        } else if (tag === 'figure' && el.querySelector('img')) {
+          const img = el.querySelector('img');
+          blocks.push({
+            type: 'img',
+            spans: [{ text: img?.getAttribute('src') || '', size: '16px' }]
+          });
+        } else if (['p', 'div', 'h2', 'h1', 'h3', 'ul', 'ol', 'li'].includes(tag)) {
+          // Check if this block contains an inline image
+          const nestedImg = el.querySelector('img');
+          if (nestedImg) {
             blocks.push({
-              type: tag,
-              spans: [{ text: '\n', size: tag === 'h2' ? '24px' : '16px' }]
+              type: 'img',
+              spans: [{ text: nestedImg.getAttribute('src') || '', size: '16px' }]
             });
           } else {
-            const spans = this.parseBlockSpans(el, tag);
-            blocks.push({
-              type: tag,
-              spans: spans.length > 0 ? spans : [{ text: '\n', size: tag === 'h2' ? '24px' : '16px' }]
-            });
+            const text = el.innerText || '';
+            const hasBr = el.querySelector('br') !== null;
+            const defSize = this.getDefaultSizeForBlockType(tag);
+
+            if (!text.replace(/\u200B/g, '').trim() && (hasBr || el.innerHTML === '')) {
+              blocks.push({
+                type: tag,
+                spans: [{ text: '\n', size: defSize }]
+              });
+            } else {
+              const spans = this.parseBlockSpans(el, tag);
+              blocks.push({
+                type: tag,
+                spans: spans.length > 0 ? spans : [{ text: '\n', size: defSize }]
+              });
+            }
           }
         } else if (tag === 'br') {
           blocks.push({
@@ -646,11 +895,22 @@ export class NewPageComponent implements OnInit, OnDestroy {
       }
     };
 
+    const defSize = this.getDefaultSizeForBlockType(type);
+
+    // Also inherit styles from blockElement itself!
+    const blockStyle = blockElement.style;
+    const initialStyles: Partial<JsonSpan> = {
+      size: blockStyle.fontSize || defSize
+    };
+    if (blockStyle.fontWeight === 'bold' || blockStyle.fontWeight === '700') initialStyles.bold = true;
+    if (blockStyle.fontStyle === 'italic') initialStyles.italic = true;
+    if (blockStyle.textDecoration && blockStyle.textDecoration.includes('underline')) initialStyles.underline = true;
+    if (blockStyle.color) initialStyles.color = blockStyle.color;
+    if (blockStyle.backgroundColor && blockStyle.backgroundColor !== 'transparent') initialStyles.highlight = blockStyle.backgroundColor;
+
     const children = blockElement.childNodes;
     for (let i = 0; i < children.length; i++) {
-      traverse(children[i], {
-        size: type === 'h2' ? '24px' : '16px'
-      });
+      traverse(children[i], initialStyles);
     }
 
     return spans;
@@ -663,10 +923,27 @@ export class NewPageComponent implements OnInit, OnDestroy {
       if (!Array.isArray(blocks)) return '<p><br></p>';
 
       let html = '';
+      this.imageDataUrl = ''; // reset first
+
       for (const block of blocks) {
         const tag = block.type || 'p';
-        let blockContent = '';
 
+        // Check if cover photo block
+        if (tag === 'cover') {
+          if (block.spans && block.spans[0]) {
+            this.imageDataUrl = block.spans[0].text;
+          }
+          continue;
+        }
+
+        // Check if inline image block
+        if (tag === 'img') {
+          const src = block.spans && block.spans[0] ? block.spans[0].text : '';
+          html += `<figure class="editor-inline-image" style="margin: 1rem 0; text-align: center;"><img src="${src}" style="max-width: 100%; max-height: 400px; border-radius: 0.5rem; display: inline-block;" /></figure>`;
+          continue;
+        }
+
+        let blockContent = '';
         const spans = block.spans || [];
         for (const span of spans) {
           if (span.text === '\n') {

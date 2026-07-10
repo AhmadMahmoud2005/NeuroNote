@@ -1,0 +1,121 @@
+.demo-shell {
+  min-height: 100vh;
+  background: var(--color-white);
+  color: var(--color-neutral);
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-header {
+  height: 4.5rem;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+.demo-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 850;
+  font-size: 1.15rem;
+}
+
+.demo-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--color-primary);
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.demo-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-home {
+  padding: 0.55rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 750;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  color: var(--color-ternary);
+  transition: var(--transition-smooth);
+}
+
+.btn-home:hover {
+  background: var(--color-secondary);
+  color: var(--color-neutral);
+}
+
+.btn-save {
+  padding: 0.55rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 750;
+  border-radius: 0.35rem;
+  background: var(--color-primary);
+  color: var(--color-white);
+  transition: var(--transition-smooth);
+}
+
+.btn-save:hover {
+  background: #2563EB;
+}
+
+.demo-editor-wrap {
+  flex: 1;
+  width: min(100%, 780px);
+  margin: 3rem auto;
+  padding: 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.title-input {
+  width: 100%;
+  border: none;
+  font-size: 2.5rem;
+  font-weight: 850;
+  color: var(--color-neutral);
+  outline: none;
+  background: transparent;
+}
+
+.title-input::placeholder {
+  color: rgba(100, 116, 139, 0.35);
+}
+
+.content-editor {
+  flex: 1;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--color-neutral);
+  outline: none;
+  min-height: 400px;
+}
+
+.content-editor h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-neutral);
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.content-editor p {
+  margin-bottom: 1rem;
+}
+
+.content-editor strong {
+  font-weight: 800;
+}

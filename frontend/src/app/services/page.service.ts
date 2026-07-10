@@ -98,6 +98,10 @@ export class PageService {
   getAllPages(): Observable<PageResponse[]> {
     return this.http.get<PageResponse[]>(`${this.apiUrl}/all`);
   }
+
+  uploadImage(formData: FormData): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/upload-image`, formData);
+  }
 }
 
 export interface PageInvitation {

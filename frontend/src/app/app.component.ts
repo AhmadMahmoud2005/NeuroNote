@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { NavComponent } from './landing/nav/nav.component';
 import { FooterComponent } from './landing/footer/footer.component';
@@ -12,7 +12,7 @@ import { AuthService } from './services/auth.service';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'final-project';
 
   constructor(
@@ -20,12 +20,16 @@ export class AppComponent {
     private readonly authService: AuthService
   ) {}
 
+  ngOnInit(): void {
+    const isDark = localStorage.getItem('theme') === 'dark';
+    document.body.classList.toggle('dark-theme', isDark);
+
+    const isCompact = localStorage.getItem('compactLayout') !== 'false';
+    document.body.classList.toggle('compact-layout', isCompact);
+  }
+
   get showSiteChrome(): boolean {
-    // If the user is logged in, never show the landing page header/footer
-    if (this.authService.isLoggedIn) {
-      return false;
-    }
-    // Only show on root, home and about pages for guests
+    // Only show on root, home and about pages (landing pages)
     const guestRoutes = ['/', '/home', '/about'];
     return guestRoutes.includes(this.router.url.split('?')[0]);
   }

@@ -5,6 +5,7 @@ using NeuroNote.Api.Data;
 using NeuroNote.Api.DTOs.Pages;
 using NeuroNote.Api.DTOs.Workspaces;
 using NeuroNote.Api.Models;
+using NeuroNote.Api.Services;
 using System.Security.Claims;
 
 namespace NeuroNote.Api.Controllers;
@@ -15,10 +16,12 @@ namespace NeuroNote.Api.Controllers;
 public class PagesController : ControllerBase
 {
     private readonly NeuroNoteDbContext _context;
+    private readonly CloudinaryService _cloudinaryService;
 
-    public PagesController(NeuroNoteDbContext context)
+    public PagesController(NeuroNoteDbContext context, CloudinaryService cloudinaryService)
     {
         _context = context;
+        _cloudinaryService = cloudinaryService;
     }
 
     [HttpGet("all")]
@@ -580,6 +583,33 @@ public class PagesController : ControllerBase
         catch
         {
             return string.Empty;
+        }
+    }
+
+    [HttpPost("upload-image")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file was provided." });
+
+        // Enforce 1 MB limit (Requirement 6)
+        if (file.Length > 1024 * 1024)
+            return BadRequest(new { message = "Image must be 1 MB or smaller." });
+
+        // Validate file type
+        var allowed = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
+        if (!allowed.Contains(file.ContentType.ToLowerInvariant()))
+            return BadRequest(new { message = "Only JPG, PNG, GIF and WebP images are accepted." });
+
+        try
+        {
+            var secureUrl = await _cloudinaryService.UploadImageAsync(file);
+            return Ok(new { url = secureUrl });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = $"Upload failed: {ex.Message}" });
         }
     }
 }

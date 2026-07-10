@@ -12,11 +12,61 @@
         <button type="button" class="btn-save" (click)="savePage()">Save Note</button>
         <button type="button" class="btn-delete-page" *ngIf="pageId && isOwnerOfPage" (click)="deletePage()">Delete Note</button>
         <button type="button" class="icon-button share" *ngIf="pageId" (click)="openShareModal()" aria-label="Share page"></button>
-        <button type="button" class="icon-button bell" aria-label="Notifications"></button>
-        <button type="button" class="profile-button" aria-label="Profile" routerLink="/settings">{{ getAvatarCharacter() }}</button>
+        
+        <!-- Notifications bell -->
+        <div class="notifications-container" style="position: relative;">
+          <button 
+            type="button" 
+            class="icon-button bell-button"
+            aria-label="Open notifications"
+            (click)="toggleNotifications()"
+            style="border: none; cursor: pointer; background: none; display: flex; align-items: center; justify-content: center; position: relative;"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: auto;">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span *ngIf="pendingInvitations.length + pendingPageInvitations.length > 0" class="notification-badge">{{ pendingInvitations.length + pendingPageInvitations.length }}</span>
+          </button>
+
+          <div *ngIf="isNotificationsOpen" class="notifications-menu" style="right: -60px; top: calc(100% + 0.5rem);">
+            <div class="menu-heading">Workspace Invitations</div>
+            <div *ngIf="pendingInvitations.length; else emptyNotifications" class="notification-list">
+              <div *ngFor="let invite of pendingInvitations" class="notification-item">
+                <p><strong>{{ invite.invitedByUsername }}</strong> invited you to join <strong>{{ invite.workspaceName }}</strong></p>
+                <div class="invite-actions">
+                  <button type="button" class="btn-accept" (click)="respondInvitation(invite, true)">Accept</button>
+                  <button type="button" class="btn-decline" (click)="respondInvitation(invite, false)">Decline</button>
+                </div>
+              </div>
+            </div>
+            <ng-template #emptyNotifications>
+              <p class="empty-state">No pending workspace invitations</p>
+            </ng-template>
+
+            <div class="menu-heading" style="margin-top: 1rem; border-top: 1px solid rgba(100, 116, 139, 0.12); padding-top: 0.75rem;">Page Invitations</div>
+            <div *ngIf="pendingPageInvitations.length; else emptyPageNotifications" class="notification-list">
+              <div *ngFor="let invite of pendingPageInvitations" class="notification-item">
+                <p><strong>{{ invite.sharedByUsername }}</strong> shared note <strong>"{{ invite.pageTitle }}"</strong> with you ({{ invite.permission === 'Write' ? 'Edit' : 'View' }})</p>
+                <div class="invite-actions">
+                  <button type="button" class="btn-accept" (click)="respondPageInvitation(invite, true)">Accept</button>
+                  <button type="button" class="btn-decline" (click)="respondPageInvitation(invite, false)">Decline</button>
+                </div>
+              </div>
+            </div>
+            <ng-template #emptyPageNotifications>
+              <p class="empty-state">No pending page invitations</p>
+            </ng-template>
+          </div>
+        </div>
+
+        <button type="button" class="profile-button" aria-label="Profile" routerLink="/settings" style="overflow: hidden; padding: 0;">
+          <img *ngIf="currentUser?.avatarUrl; else noAvatar" [src]="currentUser?.avatarUrl" style="width: 100%; height: 100%; object-fit: cover;" />
+          <ng-template #noAvatar><span>{{ getAvatarCharacter() }}</span></ng-template>
+        </button>
       </div>
     </header>
-
+ 
     <main class="editor-wrap">
       <nav class="breadcrumb" aria-label="Page location">
         <span class="folder-icon" aria-hidden="true"></span>
@@ -24,25 +74,31 @@
         <span aria-hidden="true">&gt;</span>
         <strong>Page Editor</strong>
       </nav>
-
-      <!-- Page Title -->
-      <input
-        class="title-input"
-        type="text"
-        aria-label="Page title"
-        placeholder="Untitled Note"
-        [(ngModel)]="title"
-        (ngModelChange)="onTitleChange()"
-      />
+ 
+      <!-- Page Title & Cover Button Area -->
+      <div class="title-area" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+        <input
+          class="title-input"
+          type="text"
+          aria-label="Page title"
+          placeholder="Untitled Note"
+          [(ngModel)]="title"
+          (ngModelChange)="onTitleChange()"
+          style="flex: 1;"
+        />
+        <button type="button" class="btn-add-cover" (click)="openImagePicker()" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid rgba(100, 116, 139, 0.2); background: var(--color-secondary); color: var(--color-neutral); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: var(--transition-smooth); white-space: nowrap;">
+          🖼️ Add Cover
+        </button>
+      </div>
 
       <!-- Toolbar: Visible only when text selection is active -->
       <div class="toolbar" *ngIf="showToolbar" aria-label="Editor toolbar">
         
         <!-- Size control stepper (- size +) -->
         <div class="size-control">
-          <button type="button" class="size-btn" (click)="decreaseSize()" (mousedown)="$event.preventDefault()">-</button>
+          <button type="button" class="size-btn" (click)="decreaseSize()" (mousedown)="onToolbarFocus(); $event.preventDefault()">-</button>
           <input type="number" class="size-input" [(ngModel)]="currentFontSize" (change)="onFontSizeChange()" (focus)="onToolbarFocus()" (blur)="onToolbarBlur()" />
-          <button type="button" class="size-btn" (click)="increaseSize()" (mousedown)="$event.preventDefault()">+</button>
+          <button type="button" class="size-btn" (click)="increaseSize()" (mousedown)="onToolbarFocus(); $event.preventDefault()">+</button>
         </div>
 
         <div class="separator"></div>
@@ -100,6 +156,7 @@
         </button>
       </div>
 
+      <!-- Cover Image Input (Accepts image/*, max 1MB validated in TS) -->
       <input
         #imageInput
         class="hidden-input"
@@ -108,9 +165,18 @@
         (change)="addImage($event)"
       />
 
+      <!-- Inline Image Input (Accepts image/*, max 1MB validated in TS) -->
+      <input
+        #inlinePhotoInput
+        class="hidden-input"
+        type="file"
+        accept="image/*"
+        (change)="addInlineImage($event)"
+      />
+
       <figure *ngIf="imageDataUrl" class="image-block">
-        <img [src]="imageDataUrl" alt="Page attachment" />
-        <button type="button" (click)="removeImage()">Remove image</button>
+        <img [src]="imageDataUrl" alt="Page cover" />
+        <button type="button" (click)="removeImage()">Remove cover</button>
       </figure>
 
       <!-- Editor Content editable div -->
@@ -122,9 +188,9 @@
         aria-label="Page content"
       ></section>
 
-      <button type="button" class="add-content" (click)="openImagePicker()">
+      <button type="button" class="add-content" (click)="openInlineImagePicker()">
         <span aria-hidden="true">+</span>
-        Attach Cover Image
+        Add Photo
       </button>
     </main>
   </section>
@@ -221,6 +287,22 @@
         <ng-template #noSharedUsers>
           <p class="no-collaborators">This note is private to you and the workspace members.</p>
         </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clean UI Delete Note Modal -->
+  <div class="clean-modal-overlay" *ngIf="showDeleteConfirm">
+    <div class="clean-modal-container">
+      <div class="clean-modal-header">
+        <h2>Delete Note</h2>
+      </div>
+      <div class="clean-modal-body">
+        <p>Are you sure you want to delete note "{{ title }}"? This action cannot be undone.</p>
+      </div>
+      <div class="clean-modal-actions">
+        <button type="button" class="clean-modal-btn-cancel" (click)="closeDeleteModal()">Cancel</button>
+        <button type="button" class="clean-modal-btn-danger" (click)="confirmDeletePage()">Delete</button>
       </div>
     </div>
   </div>

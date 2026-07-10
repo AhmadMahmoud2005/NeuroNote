@@ -1,0 +1,56 @@
+<div class="demo-shell">
+  <!-- Demo Header -->
+  <header class="demo-header">
+    <div class="demo-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 22C12 22 12 13 18 8C19.5 6.5 20 4.5 20 3C18.5 3 16.5 3.5 15 5C10 11 10 18 10 18" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 15C12 15 7.5 12 5.5 8C4.8 6.5 4.8 4.5 5.5 3.5C6.5 2.8 8.5 2.8 10 4.2C13.5 7.7 13 13 13 13" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span style="font-weight: 850; font-size: 1.25rem;">NeuroNote <span class="demo-badge">PREVIEW MODE</span></span>
+    </div>
+    
+    <div class="demo-actions">
+      <button type="button" class="btn-home" routerLink="/home">Back to Home</button>
+      <button type="button" class="btn-save" (click)="savePage()">Save Note</button>
+    </div>
+  </header>
+
+  <main class="demo-editor-wrap">
+    <!-- Page Title -->
+    <input
+      class="title-input"
+      type="text"
+      aria-label="Note title"
+      placeholder="Untitled Note"
+      [(ngModel)]="title"
+    />
+
+    <!-- Editor contenteditable area -->
+    <div
+      class="content-editor"
+      contenteditable="true"
+      (input)="onContentInput($event)"
+      aria-label="Note content"
+    >
+      <h2>Overview & Objectives</h2>
+      <p>This is a temporary preview note. Start typing your thoughts here...</p>
+      <p>Try formatting text, writing ideas, or taking notes. When you want to save, click <strong>Save Note</strong> in the top right corner.</p>
+    </div>
+  </main>
+
+  <!-- Clean UI Save/SignIn Modal Overlay -->
+  <div class="clean-modal-overlay" *ngIf="showSaveModal">
+    <div class="clean-modal-container">
+      <div class="clean-modal-header">
+        <h2>Save Your Note</h2>
+      </div>
+      <div class="clean-modal-body">
+        <p>Would you like to log in or register now to save your note and start organizing your workspaces?</p>
+      </div>
+      <div class="clean-modal-actions">
+        <button type="button" class="clean-modal-btn-cancel" (click)="cancelModal()">Cancel</button>
+        <button type="button" class="clean-modal-btn-primary" (click)="confirmLogin()">Sign In / Register</button>
+      </div>
+    </div>
+  </div>
+</div>

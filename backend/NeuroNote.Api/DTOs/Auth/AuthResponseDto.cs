@@ -8,4 +8,5 @@ public class AuthResponseDto
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public int DefaultWorkspaceId { get; set; }
+    public string AvatarUrl { get; set; } = string.Empty;
 }

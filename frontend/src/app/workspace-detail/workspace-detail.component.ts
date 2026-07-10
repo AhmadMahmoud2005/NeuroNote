@@ -43,6 +43,9 @@ export class WorkspaceDetailComponent implements OnInit {
   collaborators: WorkspaceMember[] = [];
   loadingCollaborators = false;
 
+  // Custom Delete Confirm State
+  showDeleteConfirm = false;
+
   onTopbarSearch(): void {
     const q = this.topbarQuery.trim();
     if (q) {
@@ -181,20 +184,29 @@ export class WorkspaceDetailComponent implements OnInit {
 
   deleteWorkspace(): void {
     if (!this.isOwner) return;
-    if (confirm(`Are you sure you want to delete workspace "${this.workspace.name}"? This action cannot be undone.`)) {
-      this.workspaceService.deleteWorkspace(this.workspaceId).subscribe({
-        next: () => {
-          localStorage.removeItem('activeWorkspaceId');
-          this.router.navigate(['/workspaces']).then(() => {
-            window.location.reload();
-          });
-        },
-        error: (err) => {
-          console.error('Error deleting workspace:', err);
-          alert('Failed to delete workspace. Please try again.');
-        }
-      });
-    }
+    this.showDeleteConfirm = true;
+  }
+
+  confirmDeleteWorkspace(): void {
+    if (!this.isOwner || !this.workspaceId) return;
+    this.workspaceService.deleteWorkspace(this.workspaceId).subscribe({
+      next: () => {
+        localStorage.removeItem('activeWorkspaceId');
+        this.showDeleteConfirm = false;
+        this.router.navigate(['/workspaces']).then(() => {
+          window.location.reload();
+        });
+      },
+      error: (err) => {
+        console.error('Error deleting workspace:', err);
+        this.showDeleteConfirm = false;
+        alert('Failed to delete workspace. Please try again.');
+      }
+    });
+  }
+
+  closeDeleteModal(): void {
+    this.showDeleteConfirm = false;
   }
 
   truncate(html: string, length: number): string {

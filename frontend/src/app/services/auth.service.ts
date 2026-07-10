@@ -51,7 +51,8 @@ export class AuthService {
       userId: response.userId,
       username: response.username,
       fullName: response.fullName,
-      email: response.email
+      email: response.email,
+      avatarUrl: (response as any).avatarUrl
     };
     localStorage.setItem('auth_user', JSON.stringify(user));
     localStorage.setItem('activeWorkspaceId', String(response.defaultWorkspaceId));

@@ -63,7 +63,8 @@ public class AuthService
             Username = user.Username,
             FullName = user.FullName,
             Email = user.Email,
-            DefaultWorkspaceId = workspace.Id
+            DefaultWorkspaceId = workspace.Id,
+            AvatarUrl = user.AvatarUrl
         };
     }
 
@@ -98,7 +99,8 @@ public class AuthService
             Username = user.Username,
             FullName = user.FullName,
             Email = user.Email,
-            DefaultWorkspaceId = workspace.Id
+            DefaultWorkspaceId = workspace.Id,
+            AvatarUrl = user.AvatarUrl
         };
     }
 

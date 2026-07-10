@@ -19,7 +19,7 @@ export class SettingsComponent implements OnInit {
   isSaving = false;
   statusMessage = '';
   isDarkMode = false;
-  isCompactLayout = true;
+  showLogoutConfirm = false;
 
   profile: UserProfile = {
     id: 1,
@@ -40,7 +40,6 @@ export class SettingsComponent implements OnInit {
       this.userId = user.userId;
     }
     this.isDarkMode = localStorage.getItem('theme') === 'dark';
-    this.isCompactLayout = localStorage.getItem('compactLayout') !== 'false';
     this.applyTheme();
 
     this.settingsService.getProfile(this.userId).subscribe(profile => {
@@ -108,6 +107,14 @@ export class SettingsComponent implements OnInit {
       this.isSaving = false;
       this.statusMessage = 'Avatar updated';
       input.value = '';
+
+      // Sync avatar changes with Auth service current user
+      const user = this.authService.currentUser;
+      if (user) {
+        const updatedUser = { ...user, avatarUrl: profile.avatarUrl };
+        localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+        (this.authService as any).currentUserSubject.next(updatedUser);
+      }
     });
   }
 
@@ -117,20 +124,20 @@ export class SettingsComponent implements OnInit {
     this.applyTheme();
   }
 
-  toggleCompactLayout(): void {
-    this.isCompactLayout = !this.isCompactLayout;
-    localStorage.setItem('compactLayout', String(this.isCompactLayout));
-    document.body.classList.toggle('compact-layout', this.isCompactLayout);
+  onLogout(): void {
+    this.showLogoutConfirm = true;
   }
 
-  onLogout(): void {
-    if (confirm('Are you sure you want to log out?')) {
-      this.authService.logout();
-    }
+  confirmLogout(): void {
+    this.showLogoutConfirm = false;
+    this.authService.logout();
+  }
+
+  closeLogoutModal(): void {
+    this.showLogoutConfirm = false;
   }
 
   private applyTheme(): void {
     document.body.classList.toggle('dark-theme', this.isDarkMode);
-    document.body.classList.toggle('compact-layout', this.isCompactLayout);
   }
 }

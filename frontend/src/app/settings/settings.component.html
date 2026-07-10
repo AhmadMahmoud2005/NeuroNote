@@ -17,7 +17,6 @@
 
         <nav aria-label="Settings sections">
           <a href="#profile" class="active">Profile</a>
-          <a href="#appearance">Appearance</a>
         </nav>
 
         <button type="button" class="btn-logout-settings" (click)="onLogout()" style="margin-top: 3rem; background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 0.6rem 1.2rem; border-radius: 0.35rem; width: 100%; cursor: pointer; font-weight: 750; font-family: var(--font-family); transition: var(--transition-smooth); display: block; text-align: center;">
@@ -101,25 +100,24 @@
               <span></span>
             </button>
           </div>
-
-          <div class="setting-row">
-            <div>
-              <h3>Compact Layout</h3>
-              <p>Reduce spacing to fit more content on screen.</p>
-            </div>
-
-            <button
-              type="button"
-              class="toggle"
-              [class.on]="isCompactLayout"
-              aria-label="Toggle compact layout"
-              (click)="toggleCompactLayout()"
-            >
-              <span></span>
-            </button>
-          </div>
         </section>
       </section>
     </main>
   </section>
+
+  <!-- Clean UI Logout Modal -->
+  <div class="clean-modal-overlay" *ngIf="showLogoutConfirm">
+    <div class="clean-modal-container">
+      <div class="clean-modal-header">
+        <h2>Log Out</h2>
+      </div>
+      <div class="clean-modal-body">
+        <p>Are you sure you want to log out of your account?</p>
+      </div>
+      <div class="clean-modal-actions">
+        <button type="button" class="clean-modal-btn-cancel" (click)="closeLogoutModal()">Cancel</button>
+        <button type="button" class="clean-modal-btn-primary" (click)="confirmLogout()">Log Out</button>
+      </div>
+    </div>
+  </div>
 </div>

@@ -21,6 +21,8 @@ export class TasksComponent implements OnInit {
   sortOrder = 'desc';
   keepCompletedAtBottom = true;
   searchQuery = '';
+  showDeleteConfirm = false;
+  taskToDeleteId: number | null = null;
 
   newTask = {
     title: '',
@@ -94,16 +96,28 @@ export class TasksComponent implements OnInit {
   }
 
   deleteTask(taskId: number): void {
-    if (confirm('Are you sure you want to delete this task?')) {
-      this.taskService.deleteTask(taskId).subscribe({
+    this.taskToDeleteId = taskId;
+    this.showDeleteConfirm = true;
+  }
+
+  confirmDeleteTask(): void {
+    if (this.taskToDeleteId !== null) {
+      this.taskService.deleteTask(this.taskToDeleteId).subscribe({
         next: () => {
           this.loadTasks();
+          this.closeDeleteModal();
         },
         error: (err) => {
           console.error('Error deleting task:', err);
+          this.closeDeleteModal();
         }
       });
     }
+  }
+
+  closeDeleteModal(): void {
+    this.showDeleteConfirm = false;
+    this.taskToDeleteId = null;
   }
 
   getSortedTasks(): TaskItem[] {

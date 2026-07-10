@@ -80,8 +80,9 @@
           </div>
         </div>
 
-        <button type="button" class="avatar-button" aria-label="Open profile menu" routerLink="/settings">
-          <span>{{ getAvatarCharacter() }}</span>
+        <button type="button" class="avatar-button" aria-label="Open profile menu" routerLink="/settings" style="overflow: hidden; padding: 0;">
+          <img *ngIf="currentUser?.avatarUrl; else avatarChar" [src]="currentUser?.avatarUrl" style="width: 100%; height: 100%; object-fit: cover;" />
+          <ng-template #avatarChar><span>{{ getAvatarCharacter() }}</span></ng-template>
         </button>
       </div>
     </header>

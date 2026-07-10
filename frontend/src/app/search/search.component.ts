@@ -100,17 +100,35 @@ export class SearchComponent implements OnInit, OnDestroy {
     const trimmedQuery = this.query.trim();
     if (!trimmedQuery) return;
 
+    // Update recent searches
     this.recentSearches = [
       trimmedQuery,
       ...this.recentSearches.filter(search => search.toLowerCase() !== trimmedQuery.toLowerCase())
     ].slice(0, 5);
     localStorage.setItem(this.recentKey, JSON.stringify(this.recentSearches));
 
+    // Update URL (without reloading)
     const queryParams: any = { q: trimmedQuery };
     if (this.selectedWorkspaceId) {
       queryParams.workspaceId = this.selectedWorkspaceId;
     }
     this.router.navigate(['/search'], { queryParams });
+
+    // Directly execute the search — don't rely on route param subscription
+    // because distinctUntilChanged suppresses re-emits when URL is unchanged
+    this.isLoading = true;
+    this.notesPage = 1;
+    this.workspacesPage = 1;
+    this.searchService.search(trimmedQuery, this.selectedWorkspaceId).subscribe({
+      next: (results) => {
+        this.results = results;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Search error:', err);
+        this.isLoading = false;
+      }
+    });
   }
 
   useRecentSearch(search: string): void {
